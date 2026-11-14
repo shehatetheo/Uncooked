@@ -1,7 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import { PageHeader, Panel } from "@/components/ui";
-import { problems } from "@/lib/content";
+import { catalog } from "@/lib/catalog";
 import { actions, useStore } from "@/lib/store";
 
 const Row = ({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) => (
@@ -21,6 +21,7 @@ const Toggle = ({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
 export default function SettingsPage() {
   const s = useStore();
   const { settings } = s;
+  const problems = catalog.filter((c) => c.kind === "problem");
   const file = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<{ text: string; bad?: boolean } | null>(null);
   const [mediaId, setMediaId] = useState(problems[0]?.id ?? "");

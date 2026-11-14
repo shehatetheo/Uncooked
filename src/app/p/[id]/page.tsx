@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Workspace } from "@/components/problem/Workspace";
-import { problemById, problems, remixesOf } from "@/lib/content";
+import { problemById, problems, remixesOf } from "@/lib/content/problems";
 
 export const dynamicParams = false;
 export const generateStaticParams = () => problems.map((p) => ({ id: p.id }));

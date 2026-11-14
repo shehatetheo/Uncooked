@@ -7,7 +7,7 @@ import { Tabs } from "@/components/drill/Tabs";
 import { Recorder } from "@/components/problem/ExplainPhase";
 import { AsciiBar, cx, PageHeader, Panel } from "@/components/ui";
 import { mastery } from "@/lib/catalog";
-import { cards } from "@/lib/content";
+import { cards } from "@/lib/content/cards";
 import type { OpenCard } from "@/lib/content/types";
 import { useQueryParam } from "@/lib/hooks";
 import { actions, useStore } from "@/lib/store";

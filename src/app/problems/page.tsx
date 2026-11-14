@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { problems } from "@/lib/content";
+import { problems } from "@/lib/content/problems";
 import { PATTERNS, type PatternId, type Problem } from "@/lib/content/types";
 import { TOTAL_REPS } from "@/lib/ghost";
 import { progressOf, useStore } from "@/lib/store";

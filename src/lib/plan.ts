@@ -1,5 +1,4 @@
 import { catalog, dueItems, groupStats, statusOf, type CatalogItem } from "@/lib/catalog";
-import { problems, sqlProblems } from "@/lib/content";
 import { QUIZ_TOPICS, type QuizTopic } from "@/lib/content/types";
 import { DAY, SUPER_DAY } from "@/lib/srs";
 import type { State } from "@/lib/store";
@@ -23,15 +22,17 @@ export function todayPlan(s: State, now: number): PlanStep[] {
 
   if (days <= 1) steps.push({ title: "Night-before run", detail: "15 minutes through everything marked Shaky. Then stop and sleep.", href: "/review?mode=night", minutes: 15 });
 
-  const core = problems.filter((p) => p.tags.includes("core"));
+  const problems = catalog.filter((c) => c.kind === "problem");
+  const sqlProblems = catalog.filter((c) => c.kind === "sql");
+  const core = problems.filter((p) => p.tags?.includes("core"));
   const newCore = unstarted(s, core);
   // spread what's left of the core list over the days remaining, leaving the last day for review
   const perDay = Math.max(2, Math.ceil(newCore.length / Math.max(1, days - 1)));
-  for (const p of newCore.slice(0, perDay)) steps.push({ title: `Learn: ${p.title}`, detail: "Understand, ghost type 3 + 3, solve cold, explain.", href: `/p/${p.id}`, minutes: 20 });
+  for (const p of newCore.slice(0, perDay)) steps.push({ title: `Learn: ${p.title}`, detail: "Understand, ghost type 3 + 3, solve cold, explain.", href: p.href, minutes: 20 });
 
   if (newCore.length === 0) {
-    const next = unstarted(s, problems.filter((p) => !p.tags.includes("core")))[0];
-    if (next) steps.push({ title: `Learn: ${next.title}`, detail: next.tags.includes("made-up") ? "A made-up problem, like the ones interviewers invent." : "Sorting and strings: what the STAR student was asked.", href: `/p/${next.id}`, minutes: 20 });
+    const next = unstarted(s, problems.filter((p) => !p.tags?.includes("core")))[0];
+    if (next) steps.push({ title: `Learn: ${next.title}`, detail: next.tags?.includes("made-up") ? "A made-up problem, like the ones interviewers invent." : "Sorting and strings: what the STAR student was asked.", href: next.href, minutes: 20 });
   }
 
   const codeStats = groupStats(s, catalog.filter((c) => c.track === "code")).filter((g) => g.started > 0).sort((a, b) => a.score - b.score);
@@ -42,7 +43,7 @@ export function todayPlan(s: State, now: number): PlanStep[] {
   }
 
   const sqlNext = unstarted(s, sqlProblems)[0] ?? sqlProblems.find((p) => statusOf(s, p.id) !== "mastered");
-  if (sqlNext) steps.push({ title: `SQL: ${sqlNext.title}`, detail: `${sqlNext.concept}. SQL is its own interview.`, href: `/sql/${sqlNext.id}`, minutes: 10 });
+  if (sqlNext) steps.push({ title: `SQL: ${sqlNext.title}`, detail: `${sqlNext.group}. SQL is its own interview.`, href: sqlNext.href, minutes: 10 });
 
   const topicStats = groupStats(s, catalog.filter((c) => c.kind === "quiz")).sort((a, b) => a.score - b.score);
   const topic = topicStats[0];

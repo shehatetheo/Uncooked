@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ART, CLIPS } from "@content/media.gen";
+import { ART, CLIPS } from "@content/gen/media";
 import type { Problem } from "@/lib/content/types";
 import { BLIND_REPS, SHADOW_REPS, TOTAL_REPS } from "@/lib/ghost";
 import { useIsDesktop } from "@/lib/hooks";

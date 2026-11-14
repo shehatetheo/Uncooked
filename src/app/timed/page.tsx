@@ -1,14 +1,16 @@
 "use client";
 import { useCallback, useMemo, useState } from "react";
 import { Clock, useCountdown } from "@/components/drill/Countdown";
-import { ColdSolve } from "@/components/problem/ColdSolve";
+import dynamic from "next/dynamic";
 import { GhostPhase } from "@/components/problem/GhostPhase";
 import { PageHeader, Panel, QuoteLine } from "@/components/ui";
-import { problems } from "@/lib/content";
+import { problems } from "@/lib/content/problems";
 import { PATTERNS, type Problem } from "@/lib/content/types";
 import { quoteFor } from "@/lib/quotes";
 import type { RunReport } from "@/lib/runner/types";
 import { useStore } from "@/lib/store";
+
+const ColdSolve = dynamic(() => import("@/components/problem/ColdSolve").then((m) => m.ColdSolve), { ssr: false, loading: () => <p className="label p-4">loading editor…</p> });
 
 type Mode = "menu" | "sprint" | "mock" | "speed";
 

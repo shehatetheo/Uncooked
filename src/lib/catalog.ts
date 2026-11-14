@@ -1,5 +1,3 @@
-import { cards, problems, quiz, sqlProblems } from "@/lib/content";
-import { PATTERNS, QUIZ_TOPICS } from "@/lib/content/types";
 import type { ItemKind, ItemProgress, State } from "@/lib/store";
 import type { Status } from "@/lib/srs";
 
@@ -12,6 +10,7 @@ export interface CatalogItem {
   /** Pattern, topic or resume section. */
   group: string;
   href: string;
+  tags?: string[];
 }
 
 export const TRACKS = {
@@ -23,22 +22,17 @@ export const TRACKS = {
 } as const;
 export type TrackId = keyof typeof TRACKS;
 
-const CARD_TRACK: Record<string, { track: TrackId; href: string }> = {
-  resume: { track: "resume", href: "/resume" },
-  skill: { track: "resume", href: "/resume?tab=skills" },
-  consistency: { track: "resume", href: "/resume?tab=consistency" },
-  behavioral: { track: "behavioral", href: "/behavioral" },
-  sap: { track: "behavioral", href: "/behavioral?tab=sap" },
-  "sql-concept": { track: "sql", href: "/sql?tab=concepts" },
-};
-
-export const catalog: CatalogItem[] = [
-  ...problems.map((p): CatalogItem => ({ id: p.id, kind: "problem", track: "code", title: p.title, group: PATTERNS[p.pattern], href: `/p/${p.id}` })),
-  ...sqlProblems.map((p): CatalogItem => ({ id: p.id, kind: "sql", track: "sql", title: p.title, group: p.concept, href: `/sql/${p.id}` })),
-  ...quiz.map((q): CatalogItem => ({ id: q.id, kind: "quiz", track: "quiz", title: q.prompt, group: QUIZ_TOPICS[q.topic], href: `/quiz?topic=${q.topic}` })),
-  ...cards.map((c): CatalogItem => ({ id: c.id, kind: "card", ...CARD_TRACK[c.track]!, title: c.question, group: c.group })),
-];
-export const catalogById = new Map(catalog.map((c) => [c.id, c]));
+/**
+ * Filled once by <CatalogProvider> in the root layout, before any page renders.
+ * These are live bindings, so every importer sees the loaded catalog.
+ */
+export let catalog: CatalogItem[] = [];
+export let catalogById = new Map<string, CatalogItem>();
+export function setCatalog(items: CatalogItem[]) {
+  if (catalog === items) return;
+  catalog = items;
+  catalogById = new Map(items.map((c) => [c.id, c]));
+}
 
 const SCORE: Record<Status, number> = { not_started: 0, learning: 0.25, shaky: 0.4, got_it: 0.75, mastered: 1 };
 export const statusOf = (s: State, id: string): Status => s.progress[id]?.status ?? "not_started";

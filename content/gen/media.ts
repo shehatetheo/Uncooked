@@ -35,5 +35,6 @@ export const ART: Record<string, string> = {
   "ways-to-pay": "/art/ways-to-pay.webp",
 };
 export const CLIPS: Record<string, string> = {
-
+  "number-of-islands": "/clips/number-of-islands.mp4",
+  "valid-parentheses": "/clips/valid-parentheses.mp4",
 };

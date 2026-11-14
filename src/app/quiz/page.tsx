@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { QuizRunner } from "@/components/drill/QuizRunner";
 import { AsciiBar, PageHeader, Panel } from "@/components/ui";
 import { mastery } from "@/lib/catalog";
-import { quiz } from "@/lib/content";
+import { quiz } from "@/lib/content/quiz";
 import { QUIZ_TOPICS, type QuizQuestion, type QuizTopic } from "@/lib/content/types";
 import { useQueryParam } from "@/lib/hooks";
 import { pickWeakest } from "@/lib/pick";

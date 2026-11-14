@@ -4,7 +4,7 @@ import { CardDrill, FORMULA } from "@/components/drill/CardDrill";
 import { Tabs } from "@/components/drill/Tabs";
 import { AsciiBar, PageHeader, Panel } from "@/components/ui";
 import { mastery } from "@/lib/catalog";
-import { cards } from "@/lib/content";
+import { cards } from "@/lib/content/cards";
 import type { OpenCard } from "@/lib/content/types";
 import { useQueryParam } from "@/lib/hooks";
 import { pickWeakest } from "@/lib/pick";

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SqlWorkspace } from "@/components/sql/SqlWorkspace";
-import { sqlById, sqlProblems } from "@/lib/content";
+import { sqlById, sqlProblems } from "@/lib/content/sql";
 
 export const dynamicParams = false;
 export const generateStaticParams = () => sqlProblems.map((p) => ({ id: p.id }));

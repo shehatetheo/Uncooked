@@ -1,7 +1,8 @@
 "use client";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { ART, CLIPS } from "@content/media.gen";
+import { ART, CLIPS } from "@content/gen/media";
 import { PATTERNS, type Problem } from "@/lib/content/types";
 import { useIsDesktop } from "@/lib/hooks";
 import { TOTAL_REPS } from "@/lib/ghost";
@@ -9,11 +10,13 @@ import { quoteFor } from "@/lib/quotes";
 import type { RunReport } from "@/lib/runner/types";
 import { actions, progressOf, useStore } from "@/lib/store";
 import { cx, Panel, QuoteLine, StatusTag } from "@/components/ui";
-import { ColdSolve } from "./ColdSolve";
 import { ExplainPhase } from "./ExplainPhase";
 import { GhostPhase } from "./GhostPhase";
 import { ProblemText } from "./ProblemText";
 import { ChoiceQuestion } from "./Understand";
+
+// the code editor is the heaviest part of the page; load it when the cold solve opens
+const ColdSolve = dynamic(() => import("./ColdSolve").then((m) => m.ColdSolve), { ssr: false, loading: () => <p className="label p-4">loading editor…</p> });
 
 const PHASES = [
   { id: "understand", label: "Understand", short: "Learn" },

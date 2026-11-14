@@ -1,0 +1,395 @@
+import { defineCards } from "@/lib/content/types";
+
+/**
+ * Behavioral story slots. Answer every one in STAR form:
+ * Situation, Task, Action, Result. "Candidate story" lines are suggestions
+ * drawn from the resume. Pick the one that is true and that you can tell
+ * with real detail.
+ */
+
+const S = "S: one sentence of context. When, where, who was involved";
+const T = "T: what you specifically were responsible for";
+const A = "A: two or three things you did, in 'I' form. This is most of the answer";
+const R = "R: the outcome, with a number or a concrete change, then one sentence on what you learned";
+
+export default defineCards([
+  /* ───────────────────────── Intro ───────────────────────── */
+  {
+    id: "beh-intro-tell-me",
+    track: "behavioral",
+    group: "Intro",
+    kind: "story",
+    question: "Tell me about yourself. (60 seconds)",
+    keyPoints: [
+      "Present: first-year computer science student at Temple, with what you are doing right now",
+      "Past: two or three proof points in order of strength, for example Tide placing 2nd at OwlHacks, ReMindMap, the BeReal externship",
+      "Thread: one sentence on what connects them (building useful things, security interest, working with people)",
+      "Future: why SAP and why the STAR program, in one sentence",
+      "Stop at 60 seconds. Do not recite the resume line by line",
+      "If you have the updated resume, this is the natural place to mention the Develop for Good role",
+    ],
+  },
+  {
+    id: "beh-intro-walk-resume",
+    track: "behavioral",
+    group: "Intro",
+    kind: "story",
+    question: "Walk me through your resume.",
+    keyPoints: [
+      "Go in time order or reverse order, but pick one and keep it",
+      "One sentence per entry: what it was and the single thing you personally did",
+      "Spend the most time on the entry most relevant to this role (a project, not the longest job)",
+      "Mention food service briefly and positively: nearly two years of work alongside school",
+      "End on the present and hand back: 'Which of these would you like more detail on?'",
+      "Use the same numbers that are printed on the page",
+    ],
+  },
+  {
+    id: "beh-intro-not-on-resume",
+    track: "behavioral",
+    group: "Intro",
+    kind: "story",
+    question: "What should I know about you that is not on your resume?",
+    keyPoints: [
+      "Pick one thing, not three",
+      "Candidate answer: what has started since you applied, such as the HCI research on AAC or the Develop for Good role",
+      "Candidate answer: a habit or motivation that explains how you work",
+      "Tie it to how you would behave as a STAR student",
+      "Keep it under 45 seconds",
+    ],
+  },
+
+  /* ───────────────────────── Challenge ───────────────────────── */
+  {
+    id: "beh-challenge-technical",
+    track: "behavioral",
+    group: "Challenge",
+    kind: "story",
+    question: "Tell me about the hardest technical problem you have solved.",
+    keyPoints: [
+      S,
+      T,
+      "A: how you debugged or decided. Name what you tried first, why it failed, and what worked",
+      R,
+      "Candidate story: combining four APIs with different data shapes in Tide",
+      "Candidate story: building drag-and-drop on a raw Canvas, or offline storage, in ReMindMap",
+      "Choose the one where you wrote the code yourself",
+    ],
+  },
+  {
+    id: "beh-challenge-ambiguity",
+    track: "behavioral",
+    group: "Challenge",
+    kind: "story",
+    question: "Tell me about a time you were given an unclear goal and had to figure out what to do.",
+    keyPoints: [
+      S,
+      "T: what was unclear and what you were still expected to deliver",
+      "A: how you created clarity: questions you asked, assumptions you wrote down, a first version you showed early",
+      R,
+      "Candidate story: the BeReal brief to 'grow MAUs', which you had to turn into one specific feature",
+      "Candidate story: scoping the nonprofit redesign at Develop for Good",
+    ],
+  },
+  {
+    id: "beh-challenge-non-technical",
+    track: "behavioral",
+    group: "Challenge",
+    kind: "story",
+    question: "Tell me about an obstacle you faced that was not technical, and how you got past it.",
+    keyPoints: [
+      S,
+      T,
+      A,
+      R,
+      "Candidate story: working close to two years through school at Chick-fil-A",
+      "Candidate story: the first semester of college alongside an externship and four organizations",
+      "Keep it professional: share the obstacle, not every personal detail",
+    ],
+  },
+
+  /* ───────────────────────── Pressure ───────────────────────── */
+  {
+    id: "beh-pressure-deadline",
+    track: "behavioral",
+    group: "Pressure",
+    kind: "story",
+    question: "Tell me about a time you worked under a tight deadline.",
+    keyPoints: [
+      "S: the deadline and how much time you had",
+      "T: what had to exist by the end",
+      "A: what you cut, what you protected, and how you decided",
+      "R: what shipped and what you would do differently",
+      "Candidate story: OwlHacks time pressure on Tide",
+      "Candidate story: finishing the BeReal pitch deck during your first semester",
+    ],
+  },
+  {
+    id: "beh-pressure-prioritize",
+    track: "behavioral",
+    group: "Pressure",
+    kind: "story",
+    question: "Describe a time you had too much to do at once. How did you prioritize?",
+    keyPoints: [
+      S,
+      "T: list the competing demands",
+      "A: your actual method: what you ranked first and why, what you dropped or delayed, who you told",
+      R,
+      "Candidate story: classes, the BeReal externship and campus organizations in the same weeks",
+      "Candidate story: school plus shifts at Chick-fil-A",
+      "Interviewers will map this onto STAR, which is work plus classes. Show a system, not just effort",
+    ],
+  },
+  {
+    id: "beh-pressure-calm",
+    track: "behavioral",
+    group: "Pressure",
+    kind: "story",
+    question: "Tell me about a time something went wrong in front of a customer or an audience. How did you stay calm?",
+    keyPoints: [
+      S,
+      T,
+      "A: what you said and did in the first minute, then how you fixed the cause",
+      R,
+      "Candidate story: a rush at Chipotle or Chick-fil-A when the line fell behind or an order was wrong",
+      "Candidate story: a demo or API failing during hackathon judging, if that happened",
+    ],
+  },
+
+  /* ───────────────────────── Teamwork ───────────────────────── */
+  {
+    id: "beh-team-disagreement",
+    track: "behavioral",
+    group: "Teamwork",
+    kind: "story",
+    question: "Tell me about a time you disagreed with a teammate. What happened?",
+    keyPoints: [
+      "S: the team and the decision in dispute",
+      "T: your position and theirs, stated fairly",
+      "A: how you handled it: listened, brought evidence, proposed a test or a compromise",
+      "R: what was decided, whether it worked, and the state of the relationship afterwards",
+      "Candidate story: a design or scope decision on a hackathon team",
+      "Candidate story: a difference with your co-manager at Develop for Good",
+      "Do not make the other person the villain",
+    ],
+  },
+  {
+    id: "beh-team-uneven",
+    track: "behavioral",
+    group: "Teamwork",
+    kind: "story",
+    question: "Tell me about a time a teammate was not pulling their weight.",
+    keyPoints: [
+      S,
+      T,
+      "A: you talked to them directly first, found out why, and adjusted the plan. Escalating comes last",
+      R,
+      "Candidate story: a hackathon or externship team",
+      "Candidate story: a coworker or trainee on a shift",
+      "Show empathy and a result, not a complaint",
+    ],
+  },
+  {
+    id: "beh-team-good-team",
+    track: "behavioral",
+    group: "Teamwork",
+    kind: "story",
+    question: "Describe a team you were part of that worked well. What was your role, and what made it work?",
+    keyPoints: [
+      "S: the team and its goal",
+      "T: your role, stated with 'I'",
+      "A: two specific things you did that helped the team, not just your own task",
+      "R: the result, and the one practice you would bring to a STAR rotation",
+      "Candidate story: the Tide team at OwlHacks",
+      "Candidate story: a kitchen crew during a rush",
+    ],
+  },
+
+  /* ───────────────────────── Leadership ───────────────────────── */
+  {
+    id: "beh-lead-trained",
+    track: "behavioral",
+    group: "Leadership",
+    kind: "story",
+    question: "Tell me about a time you taught or trained someone.",
+    keyPoints: [
+      "S: who they were and what they needed to learn",
+      "T: what you were responsible for getting them to do",
+      "A: how you taught, how you corrected mistakes, how you adapted to that person",
+      "R: what they could do afterwards",
+      "Candidate story: training new hires at Chick-fil-A",
+      "Parallel to draw: explaining technical work to non-technical people",
+    ],
+  },
+  {
+    id: "beh-lead-no-authority",
+    track: "behavioral",
+    group: "Leadership",
+    kind: "story",
+    question: "Tell me about a time you led without having formal authority.",
+    keyPoints: [
+      S,
+      "T: what needed doing that nobody owned",
+      "A: how you got people moving: proposed a plan, took the first task, kept everyone informed",
+      R,
+      "Candidate story: organizing the work on a hackathon team",
+      "Candidate story: stepping up during a shift before you were a trainer",
+      "Candidate story: something you started in a campus organization",
+    ],
+  },
+  {
+    id: "beh-lead-delegate",
+    track: "behavioral",
+    group: "Leadership",
+    kind: "story",
+    question: "Tell me about a time you had to delegate work instead of doing it yourself.",
+    keyPoints: [
+      "S: the project and the people",
+      "T: what had to be handed off and why you could not do it all",
+      "A: how you defined the task, chose the person, and checked progress without taking it back",
+      "R: how it turned out, and what you learned about letting go",
+      "Candidate story: delegating design work in Figma at Develop for Good",
+      "Candidate story: splitting work across a hackathon team",
+    ],
+  },
+
+  /* ───────────────────────── Curiosity ───────────────────────── */
+  {
+    id: "beh-curious-self-taught",
+    track: "behavioral",
+    group: "Curiosity",
+    kind: "story",
+    question: "Tell me about something you taught yourself recently.",
+    keyPoints: [
+      "S: why you needed or wanted to learn it",
+      "T: what you set out to be able to do",
+      "A: how you learned: docs, building something small, where you got stuck",
+      "R: what you built or can now do, and what you are learning next",
+      "Candidate story: learning a tool in order to ship ReMindMap or Tide (IndexedDB, Canvas, the Gemini API)",
+      "Candidate story: the security certificates and TryHackMe labs",
+    ],
+  },
+  {
+    id: "beh-curious-went-deeper",
+    track: "behavioral",
+    group: "Curiosity",
+    kind: "story",
+    question: "Tell me about a time you went deeper than the task required.",
+    keyPoints: [
+      S,
+      "T: what the minimum would have been",
+      "A: the extra question you asked and what you did to answer it",
+      "R: what it changed about the result",
+      "Candidate story: checking Gemini's answer against GBIF and the IUCN Red List in Tide instead of trusting the model",
+      "Candidate story: benchmarking three competitors in the BeReal externship",
+    ],
+  },
+  {
+    id: "beh-curious-now",
+    track: "behavioral",
+    group: "Curiosity",
+    kind: "story",
+    question: "What is a technology you are curious about right now, and what have you done about it?",
+    keyPoints: [
+      "Name one specific thing, not 'AI' in general",
+      "Say what you have actually done: read, built, taken a lab",
+      "Say what you still do not understand about it",
+      "Candidate answer: the HCI research on AAC",
+      "Candidate answer: cloud security, or how enterprise AI agents such as SAP's Joule work",
+      "Close by linking it to a team you would like to rotate through",
+    ],
+  },
+
+  /* ───────────────────────── Failure ───────────────────────── */
+  {
+    id: "beh-fail-failure",
+    track: "behavioral",
+    group: "Failure",
+    kind: "story",
+    question: "Tell me about a time you failed.",
+    keyPoints: [
+      "Pick a real failure with a real cost, not a disguised success",
+      "S and T: what you were trying to do",
+      "A: what you did, and the specific mistake that was yours",
+      "R: what happened, what you changed afterwards, and one later example of the change",
+      "Candidate story: a feature that did not work or got cut at a hackathon",
+      "Candidate story: a project that did not reach the stage you wanted",
+      "Do not blame teammates, tools or time",
+    ],
+  },
+  {
+    id: "beh-fail-feedback",
+    track: "behavioral",
+    group: "Failure",
+    kind: "story",
+    question: "Tell me about a piece of critical feedback you received. What did you do with it?",
+    keyPoints: [
+      "S: who gave the feedback and on what",
+      "T: quote the feedback as closely as you can",
+      "A: your first reaction honestly, then what you changed",
+      "R: evidence that the change stuck",
+      "Candidate story: feedback from peer usability tests or mentors in the BeReal externship",
+      "Candidate story: a manager's correction at Chick-fil-A or Chipotle",
+      "Candidate story: judges' comments at a hackathon",
+    ],
+  },
+  {
+    id: "beh-fail-mistake-at-work",
+    track: "behavioral",
+    group: "Failure",
+    kind: "story",
+    question: "Tell me about a mistake you made at work and how you fixed it.",
+    keyPoints: [
+      S,
+      "T: what you were supposed to do",
+      "A: you owned it immediately, told the right person, fixed it, and changed your habit",
+      R,
+      "Candidate story: an order or food-safety slip you caught and corrected on a shift",
+      "Candidate story: a bug you shipped in a project and how you found it",
+    ],
+  },
+
+  /* ───────────────────────── Why SAP / why STAR ───────────────────────── */
+  {
+    id: "beh-why-sap",
+    track: "behavioral",
+    group: "Why SAP / why STAR",
+    kind: "story",
+    question: "Why SAP?",
+    keyPoints: [
+      "One reason about the company: software that runs the core operations of large organizations, at a scale you cannot reach in a personal project",
+      "One reason about the work: name an area you want to see from the inside (security, cloud platform, business AI such as Joule)",
+      "One reason about you: tie it to something you built or studied",
+      "Show you did the reading: mention one specific SAP product or announcement and get its name right",
+      "Avoid generic praise that would fit any company",
+    ],
+  },
+  {
+    id: "beh-why-star",
+    track: "behavioral",
+    group: "Why SAP / why STAR",
+    kind: "story",
+    question: "Why the STAR program rather than a regular summer internship?",
+    keyPoints: [
+      "The multi-year, rotational structure is the point: you get to see several teams and grow over time",
+      "As a first-year you can commit for longer than most candidates",
+      "You have already worked alongside school for close to two years, so you know what that takes",
+      "Say honestly what you do not know yet (which area you will specialize in) and how rotations help answer it",
+      "Location: say how you would get from Temple to Newtown Square and that you have thought it through",
+    ],
+  },
+  {
+    id: "beh-why-first-rotation",
+    track: "behavioral",
+    group: "Why SAP / why STAR",
+    kind: "story",
+    question: "What do you want from your first rotation, and what can you contribute from day one?",
+    keyPoints: [
+      "Want: one skill you intend to learn and one kind of team you want to try",
+      "Contribute: concrete abilities you can back up, such as TypeScript and React, Python, SQL basics, clear communication from customer-facing work",
+      "Be modest and specific. You are a first-year; say you expect to learn fast and ask questions",
+      "Flexibility: you would be glad to be placed where the team needs you",
+      "End with a question for them about what first rotations usually look like",
+    ],
+  },
+]);

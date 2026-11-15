@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import type { OpenCard } from "@/lib/content/types";
+import { useAutosaveAnswer } from "@/lib/hooks";
 import { quoteFor } from "@/lib/quotes";
 import type { Rating } from "@/lib/srs";
 import { actions, useStore } from "@/lib/store";
@@ -35,6 +36,8 @@ export function CardDrill({ cards, title, onExit }: { cards: OpenCard[]; title: 
     setText("");
     setShown(false);
   }, [i]);
+  // the typed answer is saved as you type, even if you leave before grading
+  const savedAt = useAutosaveAnswer(card?.id ?? "", text, !!card);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -84,7 +87,10 @@ export function CardDrill({ cards, title, onExit }: { cards: OpenCard[]; title: 
         {showFormula && <p className="text-xs text-ghost">Formula: {FORMULA}</p>}
 
         <textarea className="field min-h-[110px]" value={text} onChange={(e) => setText(e.target.value)} placeholder="Type your answer, or say it out loud and record it." aria-label="Your answer" />
-        <Recorder />
+        <div className="flex flex-wrap items-center gap-3">
+          <Recorder />
+          {savedAt && text.trim() && <span className="text-xs text-accent">■ saved on this device</span>}
+        </div>
 
         {!shown ? (
           <div><button type="button" className="btn btn-primary" onClick={() => setShown(true)}>Show key points</button></div>

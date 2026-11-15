@@ -17,6 +17,11 @@ export default function StatsPage() {
   const weakest = patterns.filter((p) => p.started > 0 && p.score < 0.75).slice(0, 3);
   const mastered = catalog.filter((c) => statusOf(s, c.id) === "mastered");
   const mistakes = s.attempts.filter((a) => !a.pass).slice(-40).reverse();
+  // everything you've typed and saved: explanations, resume answers, the intro script
+  const saved = Object.entries(s.answers)
+    .filter(([, list]) => list[0])
+    .map(([id, list]) => ({ id, ...list[0]!, versions: list.length, item: catalogById.get(id) }))
+    .sort((a, b) => b.at - a.at);
 
   // last 14 days of activity as a block-character histogram
   const perDay = Array.from({ length: 14 }, (_, i) => {
@@ -110,6 +115,21 @@ export default function StatsPage() {
           </Panel>
         </div>
       </section>
+
+      <Panel title={`Saved explanations and answers · ${saved.length}`} right={<span className="label">stored on this device</span>}>
+        {saved.length === 0 && <p className="p-3 text-sm text-ghost">Nothing saved yet. Explanations, resume answers and your intro script save as you type and show up here.</p>}
+        <ul data-testid="saved-answers">
+          {saved.map((a) => (
+            <li key={a.id} className="border-b border-line px-3 py-2 last:border-0">
+              <p className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
+                {a.item ? <Link href={a.item.href} className="hover:text-accent">{a.item.title}</Link> : <span>{a.id === "drill-intro-60" ? "60-second intro script" : a.id}</span>}
+                <span className="text-xs text-ghost">{new Date(a.at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}{a.versions > 1 ? ` · ${a.versions} versions` : ""}</span>
+              </p>
+              <p className="mt-1 whitespace-pre-wrap text-xs text-dim">{a.text.length > 280 ? `${a.text.slice(0, 280)}…` : a.text}</p>
+            </li>
+          ))}
+        </ul>
+      </Panel>
 
       <Panel title="Mistakes log" right={<span className="label">latest {mistakes.length}</span>}>
         {mistakes.length === 0 && <p className="p-3 text-sm text-ghost">No misses logged yet. Failed submits and wrong quiz answers show up here.</p>}

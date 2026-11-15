@@ -1,13 +1,25 @@
 "use client";
 import { useEffect } from "react";
 import { setSoundEnabled } from "@/lib/sound";
-import { useStore } from "@/lib/store";
+import { flushStore, useStore } from "@/lib/store";
 
 
 /** Client boot: keeps the sound engine in step with settings, registers the service worker. */
 export function Boot({ warmUrls }: { warmUrls: string[] }) {
   const { settings } = useStore();
   useEffect(() => setSoundEnabled(settings.sound), [settings.sound]);
+  // never lose the last keystrokes: write to storage the moment the page is hidden or closed
+  useEffect(() => {
+    const flush = () => {
+      if (document.visibilityState === "hidden") flushStore();
+    };
+    document.addEventListener("visibilitychange", flush);
+    window.addEventListener("pagehide", flushStore);
+    return () => {
+      document.removeEventListener("visibilitychange", flush);
+      window.removeEventListener("pagehide", flushStore);
+    };
+  }, []);
   useEffect(() => {
     if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
       void navigator.serviceWorker

@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Problem } from "@/lib/content/types";
 import { checkExplanation } from "@/lib/explain";
+import { useAutosaveAnswer } from "@/lib/hooks";
 import type { Rating } from "@/lib/srs";
 import { actions, progressOf, useStore } from "@/lib/store";
 import { cx, Panel } from "@/components/ui";
@@ -66,14 +67,18 @@ export function ExplainPhase({ problem: p, onRated }: { problem: Problem; onRate
   const saved = store.answers[p.id]?.[0];
   const [text, setText] = useState("");
   const [checked, setChecked] = useState(false);
+  const [ready, setReady] = useState(false);
   const loaded = useRef(false);
 
   useEffect(() => {
     if (store.ready && !loaded.current) {
       loaded.current = true;
       setText(saved?.text ?? "");
+      setReady(true);
     }
   }, [store.ready, saved]);
+  // saves as you type, once your previous explanation has loaded
+  const savedAt = useAutosaveAnswer(p.id, text, ready);
 
   const checks = checkExplanation(text);
   const cleanDays = new Set(prog.cleanColdDays).size;
@@ -113,7 +118,9 @@ export function ExplainPhase({ problem: p, onRated }: { problem: Problem; onRate
           <textarea className="field min-h-[140px]" value={text} onChange={(e) => { setText(e.target.value); setChecked(false); }} placeholder="I'd walk the list once and…" autoCapitalize="sentences" aria-label="Your explanation" />
           <div className="flex flex-wrap items-center gap-2">
             <button type="button" className="btn" disabled={!text.trim()} onClick={() => { setChecked(true); actions.saveAnswer(p.id, text); }}>Check my explanation</button>
-            {saved && <span className="text-xs text-ghost">last saved {new Date(saved.at).toLocaleDateString()}</span>}
+            <span className="text-xs" data-testid="explain-saved">
+              {savedAt ? <span className="text-accent">■ saved on this device</span> : saved ? <span className="text-dim">■ saved {new Date(saved.at).toLocaleDateString()}</span> : <span className="text-ghost">saves as you type</span>}
+            </span>
           </div>
           {checked && (
             <ul className="fade-in flex flex-col gap-1 text-sm" data-testid="explain-checks">

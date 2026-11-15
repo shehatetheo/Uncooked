@@ -143,6 +143,44 @@ test("solution panel explains the approach and reveals code only on request", as
   await expect(page.getByText(/Hints used 3\/3/)).toBeVisible();
 });
 
+test("explanations save as you type and survive a reload, with no button pressed", async ({ page }) => {
+  await skipIntro(page);
+  const notes: Record<string, string> = {
+    "two-sum": "Walk the list once with a hash map of number to index. O(n) time, O(n) space.",
+    "contains-duplicate": "Put everything in a set. If the set is smaller than the list, something repeated.",
+  };
+  for (const [id, text] of Object.entries(notes)) {
+    await page.goto(`/p/${id}`);
+    await page.getByRole("button", { name: "Explain it" }).click();
+    await page.getByLabel("Your explanation").fill(text);
+    await expect(page.getByTestId("explain-saved")).toContainText("saved on this device");
+  }
+  // typed last, then left the page straight away: the pagehide flush has to catch it
+  await page.goto("/p/valid-anagram");
+  await page.getByRole("button", { name: "Explain it" }).click();
+  await page.getByLabel("Your explanation").fill("Counter both strings and compare.");
+  await expect(page.getByTestId("explain-saved")).toContainText("saved on this device");
+
+  for (const [id, text] of Object.entries(notes)) {
+    await page.goto(`/p/${id}`);
+    await page.getByRole("button", { name: "Explain it" }).click();
+    await expect(page.getByLabel("Your explanation")).toHaveValue(text);
+  }
+  await page.goto("/stats");
+  const saved = page.getByTestId("saved-answers");
+  await expect(saved).toContainText("Two Sum");
+  await expect(saved).toContainText("Contains Duplicate");
+  await expect(saved).toContainText("Counter both strings and compare.");
+
+  // editing again later keeps the earlier version in history instead of overwriting it
+  await page.goto("/p/two-sum");
+  await page.getByRole("button", { name: "Explain it" }).click();
+  await page.getByLabel("Your explanation").fill(notes["two-sum"] + " Edge case: duplicates.");
+  await expect(page.getByTestId("explain-saved")).toContainText("saved on this device");
+  await page.goto("/stats");
+  await expect(page.getByTestId("saved-answers")).toContainText("2 versions");
+});
+
 test("sql: wrong query shows expected rows, the right one is accepted", async ({ page }) => {
   await skipIntro(page);
   await page.goto("/sql/customers-who-never-order");

@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { actions, getState } from "@/lib/store";
 
 /** True at tablet/desktop widths. False during SSR and on phones. */
 export function useIsDesktop(): boolean {
@@ -30,4 +31,26 @@ export function useQueryParam(name: string): string | null {
   const [value, setValue] = useState<string | null>(null);
   useEffect(() => setValue(new URLSearchParams(window.location.search).get(name)), [name]);
   return value;
+}
+
+/**
+ * Save an answer while it is being typed. The first save of an editing
+ * session adds a history entry; later saves in the same session amend it.
+ * Returns the time of the last save so the UI can confirm it.
+ */
+export function useAutosaveAnswer(id: string, text: string, enabled: boolean): number | null {
+  const started = useRef<string | null>(null);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  useEffect(() => {
+    if (!enabled || !text.trim()) return;
+    // unchanged from what is already stored (for example, just loaded): nothing to save
+    if (getState().answers[id]?.[0]?.text === text.trim()) return;
+    const t = setTimeout(() => {
+      actions.saveAnswer(id, text, started.current === id);
+      started.current = id;
+      setSavedAt(Date.now());
+    }, 500);
+    return () => clearTimeout(t);
+  }, [id, text, enabled]);
+  return savedAt;
 }

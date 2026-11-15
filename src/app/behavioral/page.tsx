@@ -9,8 +9,8 @@ import { AsciiBar, cx, PageHeader, Panel } from "@/components/ui";
 import { mastery } from "@/lib/catalog";
 import { cards } from "@/lib/content/cards";
 import type { OpenCard } from "@/lib/content/types";
-import { useQueryParam } from "@/lib/hooks";
-import { actions, useStore } from "@/lib/store";
+import { useAutosaveAnswer, useQueryParam } from "@/lib/hooks";
+import { useStore } from "@/lib/store";
 
 type Tab = "stories" | "intro" | "present" | "sap";
 const INTRO_ID = "drill-intro-60";
@@ -33,6 +33,7 @@ function IntroDrill() {
       setText(saved?.text ?? "");
     }
   }, [s.ready, loaded, saved]);
+  const savedAt = useAutosaveAnswer(INTRO_ID, text, loaded);
 
   return (
     <div className="grid items-start gap-3 md:grid-cols-2">
@@ -62,7 +63,7 @@ function IntroDrill() {
         <div className="flex flex-col gap-3 p-4">
           <textarea className="field min-h-[220px]" value={text} onChange={(e) => setText(e.target.value)} placeholder="Write the version you'd actually say. About 150 words is 60 seconds." aria-label="Intro script" />
           <div className="flex items-center gap-3">
-            <button type="button" className="btn" onClick={() => actions.saveAnswer(INTRO_ID, text)}>Save</button>
+            <span className="text-xs">{savedAt ? <span className="text-accent">■ saved on this device</span> : <span className="text-ghost">saves as you type</span>}</span>
             <span className={cx("text-xs tabular-nums", text.trim().split(/\s+/).filter(Boolean).length > 165 ? "text-second" : "text-dim")}>
               {text.trim().split(/\s+/).filter(Boolean).length} words · about {Math.round((text.trim().split(/\s+/).filter(Boolean).length / 150) * 60)}s spoken
             </span>

@@ -99,9 +99,19 @@ function emit() {
 function persist() {
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
+    saveTimer = null;
     const { ready: _ready, ...data } = state;
     void set(KEY, data).catch(() => {});
   }, 250);
+}
+
+/** Write pending changes now. Called when the page is hidden or closed. */
+export function flushStore() {
+  if (!saveTimer || !state.ready) return;
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  const { ready: _ready, ...data } = state;
+  void set(KEY, data).catch(() => {});
 }
 
 function update(fn: (s: State) => State) {
@@ -227,13 +237,19 @@ export const actions = {
     log({ itemId: id, kind: "card", phase: "card", pass: rating !== "again" && rating !== "shaky", note: rating });
   },
 
-  saveAnswer(id: string, text: string) {
+  /**
+   * Save a typed answer. `amend` rewrites the newest entry instead of adding
+   * one, so autosaving while typing doesn't fill the history with fragments.
+   */
+  saveAnswer(id: string, text: string, amend = false) {
     const trimmed = text.trim();
     if (!trimmed) return;
     update((s) => {
       const prev = s.answers[id] ?? [];
       if (prev[0]?.text === trimmed) return s;
-      return { ...s, answers: { ...s.answers, [id]: [{ text: trimmed, at: Date.now() }, ...prev].slice(0, 5) } };
+      const entry = { text: trimmed, at: Date.now() };
+      const next = amend && prev.length ? [entry, ...prev.slice(1)] : [entry, ...prev].slice(0, 5);
+      return { ...s, answers: { ...s.answers, [id]: next } };
     });
   },
 

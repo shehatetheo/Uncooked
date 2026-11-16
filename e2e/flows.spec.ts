@@ -30,10 +30,12 @@ test("intro plays once per session and any key skips it", async ({ page }) => {
 });
 
 test("home shows the countdown and a drill plan", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-11-17T18:00:00"));
   await skipIntro(page);
   await page.goto("/");
   await expect(page.getByTestId("countdown")).toContainText(/\d+d|Today/);
-  await expect(page.getByText("What to drill today")).toBeVisible();
+  await expect(page.getByText("Today's assignment · Tue · Day 2")).toBeVisible();
+  await expect(page.getByText("Extra, if you finish early")).toBeVisible();
   await expect(page.getByRole("link", { name: /Learn: Two Sum/ })).toBeVisible();
 });
 
@@ -233,4 +235,85 @@ test("every page renders without errors", async ({ page }) => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), `${path} overflows horizontally`).toBe(true);
   }
   expect(errors).toEqual([]);
+});
+
+test("voice mock interview: passcode, streamed turns, typed answers, feedback saved", async ({ page }) => {
+  await skipIntro(page);
+  const bodies: { mode: string; messages: { role: string; content: string }[] }[] = [];
+  await page.route("**/api/interview", async (route) => {
+    const body = route.request().postDataJSON() as (typeof bodies)[number];
+    bodies.push(body);
+    expect(route.request().headers()["x-interview-passcode"]).toBe("test-pass");
+    const reply =
+      body.mode === "feedback"
+        ? "SCORES\nCommunication: 4/5 - clear.\n\nFIX BEFORE FRIDAY\nSay the complexity first."
+        : body.messages.length === 0
+          ? "Hi, thanks for joining. What's the difference between an inner join and an outer join?"
+          : "Good. When would a left join return more rows than the left table has?";
+    await route.fulfill({ status: 200, contentType: "text/plain; charset=utf-8", body: reply });
+  });
+  await page.goto("/interview");
+  await page.getByRole("button", { name: /^SQL/ }).click();
+  await page.getByRole("button", { name: /interviewer speaks/ }).click(); // text only, so tests don't wait on speech
+  await page.getByLabel("Interview passcode").fill("test-pass");
+  await page.getByRole("button", { name: "Save" }).click();
+  await page.getByRole("button", { name: "Start interview" }).click();
+  await expect(page.getByTestId("interviewer")).toContainText("inner join and an outer join");
+
+  await page.getByLabel("Typed answer").fill("An inner join keeps only matching rows; a left outer join keeps every left row and fills NULLs.");
+  await page.getByRole("button", { name: "Send", exact: true }).click();
+  await expect(page.getByTestId("interviewer")).toContainText("more rows than the left table");
+  await expect(page.getByTestId("transcript")).toContainText("fills NULLs");
+  expect(bodies[1]!.messages.at(-1)!.content).toContain("fills NULLs");
+
+  await page.getByRole("button", { name: "End + feedback" }).click();
+  await expect(page.getByTestId("feedback")).toContainText("FIX BEFORE FRIDAY");
+  expect(bodies.at(-1)!.mode).toBe("feedback");
+  await page.waitForTimeout(600);
+  await page.goto("/stats");
+  await expect(page.getByTestId("saved-answers")).toContainText("Voice mock interview feedback");
+});
+
+test("voice mock interview falls back to offline practice when the AI is unavailable", async ({ page }) => {
+  await skipIntro(page);
+  await page.route("**/api/interview", (route) =>
+    route.fulfill({ status: 402, contentType: "application/json", body: JSON.stringify({ error: "no_credits", message: "The Anthropic account has no API credits." }) }),
+  );
+  await page.addInitScript(() => localStorage.setItem("uncooked:interview-passcode", "test-pass"));
+  await page.goto("/interview");
+  await page.getByRole("button", { name: /^Resume/ }).click();
+  await page.getByRole("button", { name: /interviewer speaks/ }).click();
+  await page.getByRole("button", { name: "Start interview" }).click();
+  await expect(page.getByText("The Anthropic account has no API credits.")).toBeVisible();
+  await page.getByRole("button", { name: "Practice offline instead" }).click();
+  await expect(page.getByText("1/6")).toBeVisible();
+  await page.getByLabel("Typed answer").fill("I built the Gemini call and the GBIF check myself.");
+  await page.getByRole("button", { name: "Send", exact: true }).click();
+  await expect(page.getByText("A strong answer hits")).toBeVisible();
+  await page.getByRole("button", { name: "Got it" }).click();
+  await expect(page.getByText("2/6")).toBeVisible();
+});
+
+test("plan: today's assignment on Home, manual ticks persist, solves tick themselves", async ({ page }) => {
+  test.setTimeout(150_000);
+  await page.clock.setFixedTime(new Date("2026-11-16T18:00:00"));
+  await skipIntro(page);
+  await page.goto("/");
+  await expect(page.getByText("Today's assignment · Mon · Day 1")).toBeVisible();
+  const manual = page.getByRole("checkbox", { name: /60-second intro/ });
+  await manual.click();
+  await expect(manual).toHaveAttribute("aria-checked", "true");
+  await page.waitForTimeout(600);
+  await page.goto("/plan");
+  await expect(page.getByRole("checkbox", { name: /60-second intro/ })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByTestId("task-d1-core-b")).toHaveAttribute("data-done", "false");
+
+  await page.goto("/p/group-anagrams");
+  await page.getByRole("button", { name: "Cold solve" }).click();
+  await setCode(page, 'class Solution:\n    def groupAnagrams(self, strs):\n        g = defaultdict(list)\n        for w in strs: g["".join(sorted(w))].append(w)\n        return list(g.values())\n');
+  await page.getByRole("button", { name: "Submit" }).first().click();
+  await expect(page.getByTestId("accepted")).toBeVisible({ timeout: 90_000 });
+  await page.waitForTimeout(600);
+  await page.goto("/plan");
+  await expect(page.getByTestId("task-d1-core-b")).toHaveAttribute("data-done", "true");
 });

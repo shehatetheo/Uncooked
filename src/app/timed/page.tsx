@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { Clock, useCountdown } from "@/components/drill/Countdown";
 import dynamic from "next/dynamic";
@@ -145,6 +146,11 @@ export default function TimedPage() {
   return (
     <div>
       <PageHeader kicker="Timed" title="Under the clock">Practice feeling the time pressure now so it isn't new on Friday.</PageHeader>
+      <Link href="/interview" className="panel panel-accent mb-3 block p-4 hover:bg-inset">
+        <span className="h2 block">Voice mock interview</span>
+        <span className="mt-1 block text-xs text-second">10-30 min · spoken</span>
+        <span className="mt-2 block text-sm text-dim">An AI interviewer talks you through a coding, SQL, resume or behavioral round, then scores you.</span>
+      </Link>
       <div className="grid gap-3 md:grid-cols-3">
         {([
           ["sprint", "Sprint", "10 min", "As many Easy problems as you can solve cold. No hints."],

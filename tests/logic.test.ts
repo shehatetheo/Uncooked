@@ -161,3 +161,32 @@ describe("content", () => {
     expect(dfg.every((c) => c.versions.length === 1 && c.versions[0] === "new")).toBe(true);
   });
 });
+
+import { PLAN } from "@content/plan";
+
+describe("four-day plan", () => {
+  it("covers Mon-Fri before the super day and every link points somewhere real", () => {
+    expect(PLAN.map((d) => d.date)).toEqual(["2026-11-16", "2026-11-17", "2026-11-18", "2026-11-19", "2026-11-20"]);
+    const problemIds = new Set(problems.map((p) => p.id));
+    const sqlIds = new Set(sqlProblems.map((p) => p.id));
+    const cardGroups = new Set(cards.map((c) => c.group));
+    for (const d of PLAN.slice(0, 4)) {
+      const minutes = d.tasks.reduce((a, t) => a + t.minutes, 0);
+      expect(minutes, d.date).toBeGreaterThanOrEqual(110);
+      expect(minutes, d.date).toBeLessThanOrEqual(130);
+    }
+    for (const t of PLAN.flatMap((d) => d.tasks)) {
+      const c = t.check;
+      if (c.kind === "solve" || c.kind === "clean-today") for (const id of c.ids) expect(problemIds.has(id), id).toBe(true);
+      if (c.kind === "sql") for (const id of c.ids) expect(sqlIds.has(id), id).toBe(true);
+      if (c.kind === "cards") {
+        for (const g of c.groups ?? []) expect(cardGroups.has(g), g).toBe(true);
+        if (c.prefix) expect(cards.some((x) => x.id.startsWith(c.prefix!)), c.prefix).toBe(true);
+      }
+      const m = t.href.match(/^\/p\/([a-z0-9-]+)/);
+      if (m) expect(problemIds.has(m[1]!), t.href).toBe(true);
+      const q = t.href.match(/^\/sql\/([a-z0-9-]+)/);
+      if (q) expect(sqlIds.has(q[1]!), t.href).toBe(true);
+    }
+  });
+});

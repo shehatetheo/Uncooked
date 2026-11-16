@@ -122,7 +122,7 @@ export default function StatsPage() {
           {saved.map((a) => (
             <li key={a.id} className="border-b border-line px-3 py-2 last:border-0">
               <p className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
-                {a.item ? <Link href={a.item.href} className="hover:text-accent">{a.item.title}</Link> : <span>{a.id === "drill-intro-60" ? "60-second intro script" : a.id}</span>}
+                {a.item ? <Link href={a.item.href} className="hover:text-accent">{a.item.title}</Link> : <span>{a.id === "drill-intro-60" ? "60-second intro script" : a.id === "mock-interview" ? "Voice mock interview feedback" : a.id}</span>}
                 <span className="text-xs text-ghost">{new Date(a.at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}{a.versions > 1 ? ` · ${a.versions} versions` : ""}</span>
               </p>
               <p className="mt-1 whitespace-pre-wrap text-xs text-dim">{a.text.length > 280 ? `${a.text.slice(0, 280)}…` : a.text}</p>

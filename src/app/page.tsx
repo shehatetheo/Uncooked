@@ -3,6 +3,8 @@ import Link from "next/link";
 import { catalog, dueItems, mastery, TRACKS, type TrackId } from "@/lib/catalog";
 import { useNow } from "@/lib/hooks";
 import { firstUnfinished, todayPlan } from "@/lib/plan";
+import { currentDay, dayMinutes } from "@/lib/assignments";
+import { DayBar, DayTasks } from "@/components/plan/DayTasks";
 import { quoteOfDay } from "@/lib/quotes";
 import { DAY, dayKey, streak, SUPER_DAY } from "@/lib/srs";
 import { useStore } from "@/lib/store";
@@ -23,6 +25,7 @@ export default function Home() {
   const days = new Set(s.attempts.map((a) => dayKey(a.at)));
   const next = firstUnfinished(s);
   const total = plan.reduce((a, p) => a + p.minutes, 0);
+  const assignment = now ? currentDay(now) : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -51,7 +54,7 @@ export default function Home() {
             <div className="mt-5 flex flex-wrap gap-1">
               {next && <Link href={next.href} className="btn btn-primary">Continue: {next.title}</Link>}
               <Link href="/review" className="btn">Daily review{due ? ` (${due})` : ""}</Link>
-              <Link href="/timed" className="btn">Mock interview</Link>
+              <Link href="/interview" className="btn">Voice mock interview</Link>
             </div>
             <QuoteLine quote={quoteOfDay(now || 0)} className="mt-5" />
           </div>
@@ -77,7 +80,17 @@ export default function Home() {
         </Panel>
       </section>
 
-      <Panel title="What to drill today" right={plan.length ? <span className="label">about {Math.round(total)} min</span> : undefined}>
+      {assignment && (
+        <Panel accent title={`Today's assignment · ${assignment.label} · ${dayMinutes(assignment)} min`} right={s.ready ? <DayBar day={assignment} now={now} /> : undefined}>
+          <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line px-3 py-3">
+            <h2 className="h2">{assignment.title}</h2>
+            <Link href="/plan" className="label hover:text-text">All four days →</Link>
+          </div>
+          <DayTasks day={assignment} now={now} />
+        </Panel>
+      )}
+
+      <Panel title={assignment ? "Extra, if you finish early" : "What to drill today"} right={plan.length ? <span className="label">about {Math.round(total)} min</span> : undefined}>
         <ol>
           {plan.map((step, i) => (
             <li key={i} className="border-b border-line last:border-0">

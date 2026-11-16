@@ -74,6 +74,8 @@ export interface State {
   attempts: Attempt[];
   answers: Record<string, SavedAnswer[]>;
   drafts: Record<string, string>;
+  /** Manually ticked plan tasks, by task id. */
+  planDone: Record<string, boolean>;
   settings: Settings;
 }
 
@@ -88,7 +90,7 @@ const DEFAULT_SETTINGS: Settings = {
 };
 
 const KEY = "uncooked:v1";
-let state: State = { ready: false, progress: {}, attempts: [], answers: {}, drafts: {}, settings: DEFAULT_SETTINGS };
+let state: State = { ready: false, progress: {}, attempts: [], answers: {}, drafts: {}, planDone: {}, settings: DEFAULT_SETTINGS };
 const listeners = new Set<() => void>();
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -135,6 +137,7 @@ export function loadStore(): Promise<void> {
       attempts: saved?.attempts ?? [],
       answers: saved?.answers ?? {},
       drafts: saved?.drafts ?? {},
+      planDone: saved?.planDone ?? {},
       settings: { ...DEFAULT_SETTINGS, ...saved?.settings },
     };
     emit();
@@ -257,6 +260,10 @@ export const actions = {
     update((s) => (s.drafts[id] === code ? s : { ...s, drafts: { ...s.drafts, [id]: code } }));
   },
 
+  togglePlanTask(id: string) {
+    update((s) => ({ ...s, planDone: { ...s.planDone, [id]: !s.planDone[id] } }));
+  },
+
   setSettings(p: Partial<Settings>) {
     update((s) => ({ ...s, settings: { ...s.settings, ...p } }));
   },
@@ -276,11 +283,12 @@ export const actions = {
       attempts: data.attempts ?? [],
       answers: data.answers ?? {},
       drafts: data.drafts ?? {},
+      planDone: data.planDone ?? {},
       settings: { ...DEFAULT_SETTINGS, ...data.settings },
     }));
   },
 
   wipe() {
-    update((s) => ({ ...s, progress: {}, attempts: [], answers: {}, drafts: {} }));
+    update((s) => ({ ...s, progress: {}, attempts: [], answers: {}, drafts: {}, planDone: {} }));
   },
 };

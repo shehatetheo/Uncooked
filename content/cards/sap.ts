@@ -275,7 +275,7 @@ export default defineCards([
       "A multi-year internship for university students: you work at SAP alongside your studies",
       "Rotational: you move through different teams or roles over the course of the program",
       "The goal is to develop students over several years, and it can lead toward full-time roles. Do not quote conversion rates",
-      "STAR is usually expanded as Student Training and Rotation. Confirm the wording on the job posting",
+      "STAR stands for Student Training and Rotation (confirmed by the program's co-lead)",
       "Confirm the current structure (hours, rotation length, on-site expectations) with your recruiter rather than assuming",
       "Be able to say why this structure suits a first-year student",
     ],

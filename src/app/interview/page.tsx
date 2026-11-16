@@ -341,7 +341,7 @@ export default function InterviewPage() {
         </PageHeader>
 
         <Panel title="Round" className="mb-4">
-          <div className="grid gap-1 p-3 md:grid-cols-5">
+          <div className="grid gap-1 p-3 md:grid-cols-3">
             {(Object.keys(ROUNDS) as Round[]).map((r) => (
               <button key={r} type="button" className="btn h-auto flex-col items-start gap-1 whitespace-normal py-2 text-left" aria-pressed={round === r} onClick={() => setRound(r)}>
                 {ROUNDS[r].label}

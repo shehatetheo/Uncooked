@@ -54,6 +54,8 @@ export function buildOfflineQueue(round: Round, version: "old" | "new" | "both")
       return pick(resume, 6);
     case "behavioral":
       return [...pick((c) => c.track === "behavioral" && c.group === "Intro", 1), ...pick((c) => c.track === "behavioral" && !["Intro", "Why SAP / why STAR"].includes(c.group), 4), ...pick((c) => c.track === "behavioral" && c.group === "Why SAP / why STAR", 1)];
+    case "host":
+      return [...pick((c) => c.id === "beh-host-greeting", 1), ...pick((c) => c.group === "Your host" && !["beh-host-greeting", "beh-host-close"].includes(c.id), 4), ...pick((c) => c.id === "beh-host-close", 1)];
     case "full":
       return [
         ...pick((c) => c.track === "behavioral" && c.group === "Intro", 1),

@@ -4,6 +4,7 @@ export const ROUNDS = {
   sql: { label: "SQL", note: "Its own interview at SAP. Joins, GROUP BY, NULLs, and why." },
   resume: { label: "Resume", note: "Line by line: what you did, the numbers, why each tool." },
   behavioral: { label: "Behavioral", note: "STAR stories, why SAP, why STAR." },
+  host: { label: "Your host", note: "Greeting, small talk, and asking her your questions." },
   full: { label: "Full mix", note: "A bit of everything, like the real super day." },
 } as const;
 export type Round = keyof typeof ROUNDS;

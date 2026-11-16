@@ -42,12 +42,13 @@ export const PLAN: PlanDay[] = [
     title: "Hash maps, joins and your story",
     why: "The hash map is the pattern behind half of all easy problems, and inner vs. outer join is the SQL question they already asked once.",
     tasks: [
+      { id: "d1-confirm", title: "Confirm your SAP visit", detail: "In the SAP visit email: tap Accept, read the Privacy Statement, and sign the Confidentiality Disclaimer. It's required before you can visit. Uploading your photo in advance is optional but speeds up check-in.", href: "/plan", minutes: 5, check: { kind: "manual" } },
       { id: "d1-core-a", title: "Learn Two Sum, Contains Duplicate, Valid Anagram", detail: "All four phases each: understand, ghost 3 + 3, solve cold, explain out loud.", href: "/p/two-sum", minutes: 45, check: { kind: "solve", ids: ["two-sum", "contains-duplicate", "valid-anagram"] } },
       { id: "d1-core-b", title: "Learn Group Anagrams", detail: "Same loop. Say why the sorted word works as a key.", href: "/p/group-anagrams", minutes: 15, check: { kind: "solve", ids: ["group-anagrams"] } },
       { id: "d1-sql", title: "Joins lab, then two join problems", detail: "Play with every join type in the lab first. Then Combine Two Tables and Customers Who Never Order.", href: "/sql?tab=joins", minutes: 20, check: { kind: "sql", ids: ["combine-two-tables", "customers-who-never-order"] } },
       { id: "d1-resume", title: "Defend Tide and ReMindMap", detail: "10 cards. Your two strongest projects get the most questions. Out loud, with the formula.", href: "/resume", minutes: 20, check: { kind: "cards", groups: ["Tide – Marine Species Identifier", "ReMindMap – AI Mind Mapping"], count: 10 } },
       { id: "d1-intro", title: "Write and record your 60-second intro", detail: "About 150 words. Record it once and listen back.", href: "/behavioral?tab=intro", minutes: 10, check: { kind: "manual" } },
-      { id: "d1-voice", title: "Voice mock interview: SQL round, 10 min", detail: "First rep under pressure. Read the feedback, don't fix anything yet.", href: "/interview", minutes: 10, check: { kind: "manual" } },
+      { id: "d1-voice", title: "Voice mock interview: SQL round, 5-10 min", detail: "First rep under pressure. Read the feedback, don't fix anything yet.", href: "/interview", minutes: 5, check: { kind: "manual" } },
     ],
   },
   {
@@ -92,19 +93,30 @@ export const PLAN: PlanDay[] = [
       { id: "d4-why", title: "Final run: intro and why SAP", detail: "Your 60-second intro once more, and why SAP / why STAR.", href: "/behavioral", minutes: 10, check: { kind: "cards", groups: ["Intro", "Why SAP / why STAR"], count: 2 } },
       { id: "d4-present", title: "Presentation drill: project walkthrough", detail: "Tide, 4 minutes, timer on, out loud once.", href: "/behavioral?tab=present", minutes: 10, check: { kind: "manual" } },
       { id: "d4-night", title: "Night-before mode, 15 minutes", detail: "Everything still marked Shaky. When the clock hits zero, stop.", href: "/review?mode=night", minutes: 15, check: { kind: "manual" } },
-      { id: "d4-logistics", title: "Logistics", detail: "Print 3 copies of your current resume. Pick the outfit. Check the route and travel time to Newtown Square; plan to arrive 15 minutes early. Charge your phone. Sleep.", href: "/plan", minutes: 10, check: { kind: "manual" } },
+      { id: "d4-logistics", title: "Logistics", detail: "Government photo ID (state ID, driver's license or passport): you can't get in without it. Print 3 copies of your current resume. Pick the outfit. Check the route to 3999 West Chester Pike, Newtown Square for a Friday late morning and plan to reach reception by 11:45. Charge your phone. Sleep.", href: "/plan", minutes: 10, check: { kind: "manual" } },
     ],
   },
   {
     date: "2026-11-20",
     label: "Fri · Super day",
     title: "Morning of: warm up, don't cram",
-    why: "Fifteen minutes to get your head in gear. Nothing new today.",
+    why: "You're on site 12:00-4:30 pm. Fifteen minutes to get your head in gear in the morning, eat a real lunch before you leave, and nothing new today.",
     tasks: [
       { id: "d5-intro", title: "Say your intro out loud once", detail: "Read the script, then say it without looking.", href: "/behavioral?tab=intro", minutes: 3, check: { kind: "manual" } },
       { id: "d5-ghost", title: "One ghost rep of Two Sum", detail: "Just to get your fingers moving.", href: "/p/two-sum", minutes: 3, check: { kind: "manual" } },
       { id: "d5-sheet", title: "Glance at the cheat sheets", detail: "Big-O table and Python tricks.", href: "/sheets", minutes: 5, check: { kind: "manual" } },
+      { id: "d5-bag", title: "Before you leave", detail: "Photo ID, printed resumes, phone, water. Eat first: it's a four-and-a-half-hour afternoon. Reach reception by 11:45.", href: "/plan", minutes: 2, check: { kind: "manual" } },
       { id: "d5-formula", title: "Remember the formula", detail: "\"I chose X because Y. I considered Z, but…\" Rationale over answer.", href: "/plan", minutes: 1, check: { kind: "manual" } },
+    ],
+  },
+  {
+    date: "2026-11-21",
+    label: "Sat · After",
+    title: "Follow up",
+    why: "A short, specific thank-you is remembered. Send it within a day.",
+    tasks: [
+      { id: "d6-thanks", title: "Thank-you email to your host", detail: "Three or four sentences. Thank her for hosting, name one specific moment from the day (and from your earlier interview with her), and say you'd be excited to join STAR. No new asks.", href: "/plan", minutes: 10, check: { kind: "manual" } },
+      { id: "d6-notes", title: "Write down what they asked", detail: "Every question you remember, while it's fresh. Useful whatever happens next.", href: "/plan", minutes: 10, check: { kind: "manual" } },
     ],
   },
 ];

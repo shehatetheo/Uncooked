@@ -166,7 +166,7 @@ import { PLAN } from "@content/plan";
 
 describe("four-day plan", () => {
   it("covers Mon-Fri before the super day and every link points somewhere real", () => {
-    expect(PLAN.map((d) => d.date)).toEqual(["2026-11-16", "2026-11-17", "2026-11-18", "2026-11-19", "2026-11-20"]);
+    expect(PLAN.map((d) => d.date)).toEqual(["2026-11-16", "2026-11-17", "2026-11-18", "2026-11-19", "2026-11-20", "2026-11-21"]);
     const problemIds = new Set(problems.map((p) => p.id));
     const sqlIds = new Set(sqlProblems.map((p) => p.id));
     const cardGroups = new Set(cards.map((c) => c.group));

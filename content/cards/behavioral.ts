@@ -392,4 +392,32 @@ export default defineCards([
       "End with a question for them about what first rotations usually look like",
     ],
   },
+  {
+    id: "beh-ask-closing",
+    track: "behavioral",
+    group: "Questions to ask them",
+    kind: "story",
+    question: "\"Do you have any questions for me?\" What do you ask?",
+    keyPoints: [
+      "Always have two ready. \"No, I think you covered everything\" reads as low interest.",
+      "About the program: \"How do STAR students choose or get placed into their rotations?\"",
+      "About success: \"What separates the STAR students who get the most out of the program?\"",
+      "About the person: \"What's kept you at SAP?\" or \"What's a project you're excited about right now?\"",
+      "About fit: \"Is there anything in my background you'd like me to say more about?\" (gives you one more shot)",
+      "Skip anything answered on the careers page, and skip pay and time off until there's an offer.",
+    ],
+  },
+  {
+    id: "beh-ask-host",
+    track: "behavioral",
+    group: "Questions to ask them",
+    kind: "story",
+    question: "Your host already interviewed you once. How do you pick up where that left off?",
+    keyPoints: [
+      "Mention one specific thing from your first conversation with her, and what you've done since (this prep counts).",
+      "Ask what the rest of the day looks like and if there's anything she'd suggest you focus on.",
+      "Thank her for hosting at the start and again at the end; she's your advocate through the day.",
+      "Keep it short and warm. She's coordinating several candidates.",
+    ],
+  },
 ]);

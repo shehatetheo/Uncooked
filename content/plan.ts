@@ -77,6 +77,7 @@ export const PLAN: PlanDay[] = [
       { id: "d3-madeup", title: "Made-up: Most Frequent Word, Schedules Overlap, Top K", detail: "Counter.most_common and sorting by start time.", href: "/p/most-frequent-word", minutes: 20, check: { kind: "solve", ids: ["most-frequent-word", "schedules-overlap", "top-k-frequent-elements"] } },
       { id: "d3-sql", title: "SQL: Department Highest Salary, Order Count per Customer", detail: "JOIN + GROUP BY, and COUNT(column) vs COUNT(*).", href: "/sql/department-highest-salary", minutes: 15, check: { kind: "sql", ids: ["department-highest-salary", "order-count-per-customer"] } },
       { id: "d3-stories", title: "Build four STAR stories", detail: "Challenge, pressure, teamwork, failure. One card each, out loud.", href: "/behavioral", minutes: 15, check: { kind: "cards", groups: ["Challenge", "Pressure", "Teamwork", "Failure"], count: 4 } },
+      { id: "d3-asking", title: "Quiz: questions to ask, 10", detail: "Who you'll meet on Friday and the best question for each of them.", href: "/quiz?topic=asking", minutes: 5, check: { kind: "quiz", topics: ["Questions to ask"], count: 10 } },
       { id: "d3-skills", title: "Skills quick-fire: 10", detail: "Every skill on your resume is fair game.", href: "/resume?tab=skills", minutes: 10, check: { kind: "cards", prefix: "skill-", count: 10 } },
     ],
   },

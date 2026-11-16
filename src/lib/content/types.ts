@@ -157,6 +157,7 @@ export const QUIZ_TOPICS = {
   complexity: "Complexity and sorting",
   projects: "My projects' tech",
   hci: "HCI research",
+  asking: "Questions to ask",
 } as const;
 export type QuizTopic = keyof typeof QUIZ_TOPICS;
 

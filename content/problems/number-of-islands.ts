@@ -24,6 +24,11 @@ Return the number of separate islands. You're allowed to modify the grid, and th
     { input: 'grid = [["1","1","1"], ["0","1","0"], ["1","1","1"]]', output: "1", note: "one connected shape" },
   ],
   constraints: ["0 ≤ rows, cols ≤ 300", 'Each cell is the string "1" or "0", not a number'],
+  brief: {
+    what: "You're given a grid where each cell is the string \"1\" for land or \"0\" for water. An island is a group of land cells joined up, down, left or right; return how many separate islands there are.",
+    example: "The three land cells in the top-left corner touch each other and form one island, while the land at row 1, column 3 and the land at row 2, column 2 only touch corner to corner, so each is its own island, giving 3.",
+    watch: "Diagonal neighbours don't count as connected, the cells are the strings \"1\" and \"0\" rather than numbers, and an empty grid has 0 islands.",
+  },
   myWords: 'Visit every cell. On land, sink the whole island (DFS turning "1" into "0") and count 1.',
   time: "O(m·n)",
   space: "O(m·n)",

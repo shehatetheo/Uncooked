@@ -14,6 +14,11 @@ You get the head of the flipped playlist. Put the tracks back in their original 
     { input: "head = 42 → 7", output: "7 → 42" },
   ],
   constraints: ["0 ≤ number of tracks ≤ 5000", "Each node has .val (the track id) and .next", "An empty playlist is head = None"],
+  brief: {
+    what: "You're given the first track of a playlist stored as a chain of nodes, where each node holds a track id and points to the next track. The playlist currently plays back to front; re-link the nodes so the tracks play in their original order, and return the new first track.",
+    example: "The playlist 5 → 4 → 3 → 2 → 1 should come back as 1 → 2 → 3 → 4 → 5, with track 1 now first.",
+    watch: "An empty playlist (head is None) should come back as None, and the same track id can appear more than once.",
+  },
   myWords:
     "Undoing a flip is just flipping again, so this is reversing a linked list. Walk the list once and turn each arrow around: save the next node, point the current node back at the previous one, then step forward. When you run off the end, prev is the new head.",
   time: "O(n)",

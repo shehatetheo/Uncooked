@@ -15,6 +15,11 @@ Return the same words in the opposite order, joined by exactly one space, with n
     { input: 's = "a good   example"', output: '"example good a"', note: "three spaces become one" },
   ],
   constraints: ["0 ≤ len(s) ≤ 10⁴", "s contains letters, digits, punctuation and spaces", "A word is any run of non-space characters"],
+  brief: {
+    what: "You're given a sentence with messy spacing: there may be spaces at the start, at the end, or several in a row between words. Return the same words in the opposite order, separated by exactly one space, with no spaces at either end.",
+    example: "\"the sky is blue\" has the words the, sky, is, blue; in the opposite order that's \"blue is sky the\".",
+    watch: "Letters and punctuation inside each word stay as they are (\"one,\" stays \"one,\"), and a string that is empty or only spaces gives back an empty string.",
+  },
   myWords:
     "split() with no argument breaks on any run of whitespace and throws away the empties, so the messy spacing disappears for free. Reverse the list of words and join with single spaces.",
   time: "O(n)",

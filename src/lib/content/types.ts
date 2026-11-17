@@ -75,6 +75,11 @@ export const Problem = z
     statement: z.string().min(20),
     examples: z.array(z.object({ input: z.string(), output: z.string(), note: z.string().optional() })).min(1),
     constraints: z.array(z.string()).default([]),
+    /**
+     * Read before solving: the problem in plain words, the first example
+     * walked through, and one thing to watch for. Never names the approach.
+     */
+    brief: z.object({ what: z.string().min(20), example: z.string().min(20), watch: z.string().min(10) }),
     myWords: z.string().min(10),
     time: z.string(),
     space: z.string(),

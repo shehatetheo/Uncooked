@@ -175,7 +175,7 @@ export function ColdSolve({ problem: p, context, allowHints = true, onSubmitted,
         )
       }
     >
-      {side === "solution" && allowHints ? solutionPanel : <ProblemText p={p} />}
+      {side === "solution" && allowHints ? solutionPanel : <ProblemText p={p} showBrief={allowHints} />}
       {allowHints && (
         <div className="border-t border-line p-4">
           <div className="flex items-center justify-between gap-3">

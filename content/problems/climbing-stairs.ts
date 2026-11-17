@@ -14,6 +14,11 @@ Return how many different sequences of moves land you exactly on the top step. O
     { input: "n = 2", output: "2", note: "1+1, 2" },
   ],
   constraints: ["1 ≤ n ≤ 45"],
+  brief: {
+    what: "There's a staircase with n steps, and each move takes you up either 1 step or 2 steps. Return how many different sequences of moves get you exactly to the top.",
+    example: "For n = 3 there are three sequences: 1+1+1, 1+2 and 2+1, so the answer is 3.",
+    watch: "Order matters, so 1+2 and 2+1 count as two different ways, and you have to land exactly on the top step; with n = 1 there is just one way.",
+  },
   myWords: "ways(n) = ways(n-1) + ways(n-2), which is Fibonacci. Keep two numbers.",
   time: "O(n)",
   space: "O(1)",

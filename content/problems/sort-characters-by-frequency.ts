@@ -14,6 +14,11 @@ All copies of the same character must sit together. Upper and lower case are dif
     { input: 's = "aAAbbb"', output: '"bbbAAa"', note: '"A" and "a" are counted separately' },
   ],
   constraints: ["0 ≤ len(s) ≤ 10⁵", "s can contain letters, digits and spaces", "No two different characters have the same count"],
+  brief: {
+    what: "You're given a string. Return its characters rearranged so the character that appears most often comes first, then the next most common, and so on, with all copies of each character grouped together.",
+    example: "In \"banana\", a appears 3 times, n twice and b once, so the answer is \"aaannb\".",
+    watch: "Upper and lower case are different characters, spaces and digits count as characters too, and no two different characters ever appear the same number of times.",
+  },
   myWords:
     "Count the characters. A count is at most len(s), so use one bucket per possible count and put each character in its bucket. Walk the buckets from the highest count down and write each character repeated count times.",
   time: "O(n)",

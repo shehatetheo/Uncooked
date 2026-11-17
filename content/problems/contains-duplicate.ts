@@ -16,6 +16,11 @@ Return True if at least one number repeats, and False if every number is differe
     { input: "nums = [1, 2, 3, 4]", output: "False" },
   ],
   constraints: ["0 ≤ len(nums) ≤ 10⁵", "-10⁹ ≤ nums[i] ≤ 10⁹"],
+  brief: {
+    what: "You're given a list of whole numbers. Return True if any value appears more than once, and False if every number is different.",
+    example: "In [1, 2, 3, 1], the value 1 appears at the start and again at the end, so the answer is True.",
+    watch: "An empty list or a single number has no repeats, so return False; and 1 and -1 are different values.",
+  },
   myWords: "A set throws out duplicates. If the set is smaller than the list, something repeated.",
   time: "O(n)",
   space: "O(n)",

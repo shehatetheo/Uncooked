@@ -16,6 +16,11 @@ Reverse the list so every pointer faces the other way, and return the new head (
     { input: "head = []", output: "[]", note: "no nodes, so head is None" },
   ],
   constraints: ["0 ≤ number of nodes ≤ 5000", "-5000 ≤ node.val ≤ 5000"],
+  brief: {
+    what: "You're given the first node (the head) of a chain of nodes, where each node holds a value and points to the next one, and the last node points to nothing. Turn the chain around so every link points the other way, and return the node that used to be last, which is now the new head.",
+    example: "The chain 1 → 2 → 3 → 4 → 5 becomes 5 → 4 → 3 → 2 → 1: node 5 is now the head and node 1 points to nothing.",
+    watch: "An empty chain (head is None) should come back as None, and a single node should come back unchanged.",
+  },
   myWords:
     "Flip each arrow: point current back to prev, move prev and head forward. Python evaluates the right side first, so the one-line swap is safe.",
   time: "O(n)",

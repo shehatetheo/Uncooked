@@ -14,6 +14,11 @@ Return the number of people on the longest chain that starts at the CEO and foll
     { input: "root = [1, 2, null, 3, null, 4]", output: "4", note: "a single chain 1 → 2 → 3 → 4" },
   ],
   constraints: ["0 ≤ number of employees ≤ 10⁴", "Each node has .val, .left and .right", "The tree is given level by level, with null for a missing report"],
+  brief: {
+    what: "You're given a company's org chart, starting at the CEO, where each person has at most two direct reports. Return how many people are on the longest chain from the CEO down to someone who manages nobody, counting everyone on the chain, including the CEO.",
+    example: "Reading [1, 2, 3, 4, null, null, 5] level by level (null means a missing report): 1 manages 2 and 3, 2 manages 4, and 3 manages 5, so the longest chains, 1 → 2 → 4 and 1 → 3 → 5, have three people and the answer is 3.",
+    watch: "Count people, not the links between them: a CEO with no reports has a chain of 1, and an empty company has a chain of 0.",
+  },
   myWords:
     "The longest chain from a manager is that manager plus the longer of the two chains below them. That's a recursive definition: an empty spot has length 0, and every person returns 1 + max(left, right). The answer at the root is the depth of the tree.",
   time: "O(n)",

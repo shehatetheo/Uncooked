@@ -14,6 +14,11 @@ Exactly one pair of items adds up to the voucher. Return the positions (indices)
     { input: "prices = [50, 50], voucher = 100", output: "[0, 1]", note: "two different items with the same price" },
   ],
   constraints: ["2 ≤ len(prices) ≤ 10⁴", "Prices are whole numbers, 0 or more", "Exactly one valid pair exists", "The list is not sorted"],
+  brief: {
+    what: "You're given a list of item prices and a voucher value. Exactly one pair of different items adds up to the voucher; return the positions of those two items in the list, smaller position first.",
+    example: "With prices [30, 45, 20, 70] and voucher 65, 45 + 20 = 65, and those items sit at positions 1 and 2, so the answer is [1, 2].",
+    watch: "You can't use the same item twice, but two different items can have the same price: [50, 50] with voucher 100 gives [0, 1].",
+  },
   myWords:
     'Walk the prices once. For each price, the only partner that works is voucher minus that price, so ask "have I already seen that?" with a hash map of price → index. Check before storing so an item never pairs with itself.',
   time: "O(n)",

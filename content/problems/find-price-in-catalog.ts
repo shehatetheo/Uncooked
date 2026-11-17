@@ -14,6 +14,11 @@ You get the sorted list of prices and the price to look for. Return the position
     { input: "prices = [5, 12, 19, 30, 42, 58], target = 20", output: "-1", note: "20 would sit between 19 and 30, but it isn't there" },
   ],
   constraints: ["0 ≤ len(prices) ≤ 10⁶", "prices is sorted ascending with no duplicates", "Expected running time: O(log n)"],
+  brief: {
+    what: "You're given a catalog's prices, listed from cheapest to most expensive with no two the same, and one exact price to look for. Return the position of that price in the list, or -1 if nothing costs exactly that much. The catalog is huge, so looking at every entry is too slow.",
+    example: "In [5, 12, 19, 30, 42, 58], the price 30 is the fourth entry; positions start at 0, so the answer is 3.",
+    watch: "A price that falls between two entries, or is cheaper or more expensive than everything, isn't there, so return -1; an empty catalog also gives -1.",
+  },
   myWords:
     "Because the list is sorted, looking at the middle entry tells you which half the target must be in. Keep a lo and hi boundary, check the middle, and throw away the half that can't contain it. Repeat until you find it or the range is empty.",
   time: "O(log n)",

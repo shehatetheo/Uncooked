@@ -229,3 +229,14 @@ describe("crash course", () => {
     for (const must of ["two sum", "merge intervals", "sort students", "joins", "where vs having", "tide", "consistency", "skills", "star stories", "your host", "questions to ask", "sap 101", "presentation", "voice mock", "sprint", "night-before", "photo id"]) expect(text, must).toContain(must);
   });
 });
+
+describe("problem briefings", () => {
+  // Words that would give the approach away before the student starts.
+  const SPOILERS = /\b(hash ?maps?|hash ?sets?|dictionar(y|ies)|counter|two pointers?|stack|recursi(on|ve)|dfs|bfs|binary search|dynamic programming|memoi[sz]|bucket|o\(|one pass|single pass|sliding window)\b/i;
+  for (const p of problems) {
+    it(`${p.id}: brief explains the problem without naming the approach`, () => {
+      for (const text of [p.brief.what, p.brief.example, p.brief.watch]) expect(text, p.id).not.toMatch(SPOILERS);
+      expect(p.brief.example.length).toBeLessThan(400);
+    });
+  }
+});

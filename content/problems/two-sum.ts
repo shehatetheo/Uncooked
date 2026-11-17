@@ -14,6 +14,11 @@ Return the positions (indices) of that pair, smaller index first. You can't use 
     { input: "nums = [3, 2, 4], target = 6", output: "[1, 2]" },
   ],
   constraints: ["2 ≤ len(nums) ≤ 10⁴", "Exactly one valid pair exists"],
+  brief: {
+    what: "You're handed a list of numbers and a target. Somewhere in the list, two different numbers add up to exactly that target. Find them and give back where they sit (their positions), not the numbers themselves.",
+    example: "With [2, 7, 11, 15] and target 9: 2 + 7 = 9, and 2 is at position 0, 7 at position 1, so the answer is [0, 1].",
+    watch: "You can't use the same position twice, but the same value can appear twice: [3, 3] with target 6 is valid and the answer is [0, 1].",
+  },
   myWords:
     'Walk the list once. For each number, ask "have I already seen target minus this number?" using a hash map of number → index. O(n) instead of checking every pair.',
   time: "O(n)",

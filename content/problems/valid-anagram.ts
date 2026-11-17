@@ -14,6 +14,11 @@ Return True if it is and False if not. Every character has to be used, so string
     { input: 's = "rat", t = "car"', output: "False", note: "t has a c where s has a t" },
   ],
   constraints: ["0 ≤ len(s), len(t) ≤ 5·10⁴", "Lowercase English letters only"],
+  brief: {
+    what: "You're given two strings, s and t. Return True if t uses exactly the same letters as s, each the same number of times, possibly in a different order, and False otherwise.",
+    example: "\"anagram\" and \"nagaram\" both have three a's, one n, one g, one r and one m, so the answer is True.",
+    watch: "Every letter has to be used, so strings of different lengths never match, while two empty strings do.",
+  },
   myWords: "Counter makes a hash map of letter counts. Same counts means anagram.",
   time: "O(n)",
   space: "O(1)",

@@ -14,6 +14,11 @@ Return True if any meeting in one schedule overlaps a meeting in the other, and 
     { input: "a = [[9, 10], [12, 13]], b = [[10, 12], [14, 15]]", output: "False", note: "back-to-back meetings only touch" },
   ],
   constraints: ["0 ≤ len(a), len(b) ≤ 10⁴", "start < end for every meeting", "Meetings inside one schedule don't overlap each other", "Neither schedule is sorted"],
+  brief: {
+    what: "You're given two people's meetings for the day, each meeting written as [start, end], in no particular order. Return True if any meeting from one schedule overlaps any meeting from the other, and False if they never clash.",
+    example: "The 9–11 meeting in a and the 10–12 meeting in b both cover the hour from 10 to 11, so the answer is True.",
+    watch: "A meeting that starts exactly when another ends, like 9–10 and 10–12, is not a clash, and either schedule can be empty.",
+  },
   myWords:
     "Each schedule is clash-free on its own, so pour both into one list. If that combined list has any overlap, it must be between the two people. Sort by start and compare each meeting with the one before it: a clash is a meeting that starts before the previous one has ended.",
   time: "O(n log n)",

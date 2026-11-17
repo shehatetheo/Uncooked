@@ -14,6 +14,11 @@ Return that shared beginning. If the words have no common start at all, return a
     { input: 'strs = ["dog", "racecar", "car"]', output: '""', note: "the first letters already differ" },
   ],
   constraints: ["1 ≤ len(strs) ≤ 200", "0 ≤ len(strs[i]) ≤ 200", "Comparison is case-sensitive"],
+  brief: {
+    what: "You're given a list of words. Return the longest beginning that every word shares, or an empty string if they don't all start the same way.",
+    example: "\"flower\", \"flow\" and \"flight\" all start with \"fl\", but their third letters are o, o and i, so the answer is \"fl\".",
+    watch: "If any word is empty the answer is \"\", a single word is its own answer, and the comparison is case-sensitive, so \"Apple\" and \"apple\" share nothing.",
+  },
   myWords:
     "Use the first word as the candidate. Go column by column: at position i, every word must have the same character as the first word. The first time a word is too short or disagrees, the prefix ends there.",
   time: "O(n · m)",

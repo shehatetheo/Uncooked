@@ -15,6 +15,11 @@ Return the first invoice number that arrives for a second time. If no invoice is
     { input: 'invoices = ["A1", "B2", "B2", "A1"]', output: '"B2"', note: "B2 repeats before A1 does" },
   ],
   constraints: ["0 ≤ len(invoices) ≤ 10⁵", "Each invoice number is a non-empty string"],
+  brief: {
+    what: "You're given invoice numbers in the order they arrived. Return the first invoice number that arrives for a second time, or an empty string if nothing is ever repeated.",
+    example: "In [\"INV-7\", \"INV-3\", \"INV-7\", \"INV-3\"], the third arrival is INV-7 again, which happens before INV-3 shows up a second time, so the answer is \"INV-7\".",
+    watch: "You want the invoice whose second arrival comes first, not the earliest invoice that repeats: [\"A1\", \"B2\", \"B2\", \"A1\"] gives \"B2\", and \"inv-1\" and \"INV-1\" are different.",
+  },
   myWords:
     "Keep a set of the invoice numbers seen so far. For each new one, if it's already in the set, that's the answer. Otherwise add it. If the loop ends, nothing repeated.",
   time: "O(n)",

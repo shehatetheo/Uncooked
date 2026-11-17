@@ -18,6 +18,11 @@ Return the biggest profit you can make from a single buy followed by a single se
     { input: "prices = [7, 6, 4, 3, 1]", output: "0", note: "the price only falls, so don't trade" },
   ],
   constraints: ["0 ≤ len(prices) ≤ 10⁵", "0 ≤ prices[i] ≤ 10⁴"],
+  brief: {
+    what: "You're given a stock's price for each day, in order. You can buy once and then sell once on a later day; return the largest profit that one trade could make, or 0 if no trade makes money.",
+    example: "With [7, 1, 5, 3, 6, 4], buying on the day the price is 1 and selling later when it's 6 earns 6 - 1 = 5, and no other buy-then-sell pair does better, so the answer is 5.",
+    watch: "The sale must come after the purchase, so a low price that comes after the high one doesn't help; an empty list or a single day means 0.",
+  },
   myWords: 'Track the cheapest price so far and the best "sell today" profit.',
   time: "O(n)",
   space: "O(1)",

@@ -40,9 +40,12 @@ test("home shows the countdown and a drill plan", async ({ page }) => {
   await expect(page.getByRole("link", { name: /Learn: Two Sum/ })).toBeVisible();
 });
 
-test("understand: three questions, then on to ghost typing", async ({ page }) => {
+test("understand: briefing first, then three questions, then on to ghost typing", async ({ page }) => {
   await skipIntro(page);
   await page.goto("/p/two-sum");
+  await expect(page.getByTestId("brief")).toContainText("What it's asking");
+  await expect(page.getByTestId("brief")).toContainText("[0, 1]");
+  await page.getByRole("button", { name: "Got it, start the questions" }).click();
   for (let i = 0; i < 3; i++) {
     await expect(page.getByText(`Question ${i + 1} of 3`)).toBeVisible();
     await page.locator("button.choice").first().click();
@@ -340,4 +343,19 @@ test("crash course: continue walks the path, notes expand, ticks persist", async
   await expect(page.getByTestId("course-continue")).toContainText("Two Sum: all four phases");
   await page.getByTestId("course-continue").click();
   await expect(page).toHaveURL(/\/p\/two-sum/);
+});
+
+test("cold solve shows the briefing, timed modes don't", async ({ page }) => {
+  await skipIntro(page);
+  await page.goto("/p/merge-intervals");
+  await page.getByRole("button", { name: "Cold solve" }).click();
+  if (isPhone(page)) await page.getByRole("tab", { name: /problem/i }).click();
+  await expect(page.getByText("In plain words")).toBeVisible();
+  await expect(page.getByTestId("brief")).toContainText("Watch for");
+  await page.goto("/timed");
+  await page.getByRole("button", { name: /^Mock interview/ }).click();
+  await page.getByRole("button", { name: "Start 20:00" }).click();
+  if (isPhone(page)) await page.getByRole("tab", { name: /problem/i }).click();
+  await expect(page.getByText("Problem").first()).toBeVisible();
+  await expect(page.getByText("In plain words")).toHaveCount(0);
 });

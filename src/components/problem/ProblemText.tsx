@@ -1,8 +1,15 @@
 import type { Problem } from "@/lib/content/types";
+import { BriefBody } from "./Brief";
 
-export function ProblemText({ p, showLinks = true }: { p: Problem; showLinks?: boolean }) {
+export function ProblemText({ p, showLinks = true, showBrief = false }: { p: Problem; showLinks?: boolean; showBrief?: boolean }) {
   return (
     <div className="p-4">
+      {showBrief && (
+        <details className="mb-4 bg-inset p-3 shadow-[inset_0_0_0_1px_var(--color-line)]" open>
+          <summary className="label cursor-pointer text-accent">In plain words</summary>
+          <div className="mt-3"><BriefBody p={p} compact /></div>
+        </details>
+      )}
       <div className="prose max-w-[68ch] text-sm leading-relaxed">
         {p.statement.split(/\n\s*\n/).map((para, i) => <p key={i}>{para}</p>)}
       </div>

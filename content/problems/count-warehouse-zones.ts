@@ -18,6 +18,11 @@ Shelves that touch side by side (up, down, left or right) belong to the same sto
     { input: 'floor = [["S",".","S"], [".","S","."], ["S",".","S"]]', output: "5", note: "diagonal neighbours don't connect" },
   ],
   constraints: ["0 ≤ rows, columns ≤ 50", 'Every cell is "S" or "."', "You may modify the grid"],
+  brief: {
+    what: "You're given a warehouse floor plan as a grid where each cell is \"S\" (a shelf) or \".\" (empty floor). Shelves that touch side by side (up, down, left or right) belong to the same zone; return how many zones there are.",
+    example: "In the first floor plan, the three shelves in the top-left corner touch each other and form an L, the two shelves one above the other on the right edge form a second zone, and the lone shelf at the bottom is a third, so the answer is 3.",
+    watch: "Shelves that touch only at a corner are separate zones, and an empty floor plan or one with no shelves has 0 zones.",
+  },
   myWords:
     "Scan every cell. Each time you land on a shelf you haven't handled, that's a new zone: count it, then flood outward from it in four directions and erase every shelf you reach, so the same zone is never counted again.",
   time: "O(rows · cols)",

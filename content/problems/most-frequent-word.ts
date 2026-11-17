@@ -14,6 +14,11 @@ Return the word that appears most often, in lower case. Upper and lower case cou
     { input: 'text = "Ship it, ship it now"', output: '"ship"', note: '"ship" and "it" both appear twice; "ship" comes first' },
   ],
   constraints: ["1 ≤ len(text) ≤ 10⁵", "text contains at least one letter", "Digits and symbols separate words, like spaces do"],
+  brief: {
+    what: "You're given a block of free text. Return the word that appears most often, in lower case. A word is any run of letters; digits, punctuation and spaces only separate words, and upper and lower case count as the same word.",
+    example: "In \"The cat and the hat. THE END\", \"The\", \"the\" and \"THE\" are all the same word, so \"the\" appears three times, more than any other word, and the answer is \"the\".",
+    watch: "If several words tie for most common, return the one that appears first in the text, and remember that \"hat.\" is just the word \"hat\".",
+  },
   myWords:
     "Clean first, count second. Lowercase the text and turn every non-letter into a space, then split into words. Count them with a Counter and take the key with the biggest count. max() returns the first maximum it meets, and a Counter remembers insertion order, so ties go to the earliest word.",
   time: "O(n)",

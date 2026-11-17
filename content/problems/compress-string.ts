@@ -15,6 +15,11 @@ Replace every run of the same character with that character followed by the leng
     { input: 's = "aabbaa"', output: '"a2b2a2"', note: "the two runs of a are counted separately" },
   ],
   constraints: ["0 ≤ len(s) ≤ 10⁵", "s contains letters and spaces, no digits", "Upper and lower case are different characters"],
+  brief: {
+    what: "You're given a string. Replace each stretch of the same character repeated back to back with that character followed by how many times it repeats, and return the result.",
+    example: "\"aaabcc\" is three a's, then one b, then two c's in a row, so it becomes \"a3b1c2\".",
+    watch: "A character that appears once still gets a 1, the same letter in two separate stretches is written twice (\"aabbaa\" becomes \"a2b2a2\"), and upper and lower case are different characters.",
+  },
   myWords:
     "Walk the string run by run. i marks where a run starts; j moves right while the character stays the same. j − i is the run length. Write character plus length, then jump i to j. Each character is visited once.",
   time: "O(n)",

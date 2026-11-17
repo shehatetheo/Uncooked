@@ -14,6 +14,11 @@ Return just the names, best grade first. When two students have the same grade, 
     { input: 'students = [["Ben", 60], ["Cara", 95]]', output: '["Cara", "Ben"]' },
   ],
   constraints: ["0 ≤ len(students) ≤ 10⁴", "Grades are whole numbers from 0 to 100", "Names are unique and start with a capital letter"],
+  brief: {
+    what: "You're given a list of students, each as a [name, grade] pair. Return just the names, ranked from best grade to worst.",
+    example: "Mia and Ava both have 90 and Leo has 85; Ava comes before Mia alphabetically, so the answer is [\"Ava\", \"Mia\", \"Leo\"].",
+    watch: "When two students have the same grade, the name that comes first alphabetically goes first, and an empty list gives back an empty list.",
+  },
   myWords:
     "One sort with a two-part key. Python compares tuples left to right, so (-grade, name) sorts by grade descending first and falls back to name ascending on ties. Then pull out the names.",
   time: "O(n log n)",

@@ -14,6 +14,11 @@ A serial is mirrored if it reads the same forwards and backwards once you ignore
     { input: 'code = "SN-100"', output: "False", note: '"sn100" backwards is "001ns"' },
   ],
   constraints: ["0 ≤ len(code) ≤ 10⁵", "A serial with no letters or digits counts as mirrored"],
+  brief: {
+    what: "You're given one serial number as a string, which can mix letters, digits, dashes and spaces. Return True if it reads the same forwards and backwards once you ignore everything except letters and digits and treat upper and lower case as equal, and False otherwise.",
+    example: "\"AB-12-21-ba\" cleans up to \"ab1221ba\", which reads the same from either end, so the answer is True.",
+    watch: "A serial with no letters or digits at all, such as an empty string or just \"- - -\", counts as mirrored, so the answer is True.",
+  },
   myWords:
     "Two pointers, one from each end, walking towards each other. Skip anything that isn't a letter or digit. Compare the two characters in lower case: a mismatch means False. If the pointers meet, True.",
   time: "O(n)",

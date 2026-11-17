@@ -15,6 +15,11 @@ The log is valid if every close matches the most recently opened container that 
     { input: 'events = [["open", "crate"]]', output: "False", note: "never closed" },
   ],
   constraints: ["0 ≤ len(events) ≤ 10⁴", 'action is always "open" or "close"', "The same container name can be opened more than once"],
+  brief: {
+    what: "A robot packs containers inside other containers and logs each \"open\" or \"close\" along with the container's name. Return True if every close names the container that was opened most recently and is still open, and nothing is left open at the end; otherwise return False.",
+    example: "In the first log, the crate is opened, then the box inside it; the box is closed first and then the crate, so every close matches and the answer is True.",
+    watch: "An empty log is valid, a close when nothing is open makes the log invalid, and the same name can be opened more than once, even inside itself.",
+  },
   myWords:
     "The container that must be closed next is always the one opened last, so keep the open ones on a stack. Push on open. On close, the top of the stack has to be that same name; if the stack is empty or the name differs, the log is invalid. At the end the stack must be empty.",
   time: "O(n)",

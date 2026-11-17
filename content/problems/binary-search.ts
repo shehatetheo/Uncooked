@@ -19,6 +19,11 @@ Your solution has to run in O(log n) time, so checking every element one by one 
     { input: "nums = [-1, 0, 3, 5, 9, 12], target = 2", output: "-1", note: "2 is not in the list" },
   ],
   constraints: ["0 ≤ len(nums) ≤ 10⁴", "nums is sorted ascending with no repeats"],
+  brief: {
+    what: "You're given a list of different whole numbers arranged from smallest to largest, plus a target number. Return the position of the target in the list, or -1 if it isn't there. Checking every element one by one is too slow for this problem.",
+    example: "In [-1, 0, 3, 5, 9, 12], the target 9 is the fifth number; positions count from 0, so the answer is 4.",
+    watch: "If the target isn't in the list, including when the list is empty, return -1 rather than the position where it would have gone.",
+  },
   myWords: "Check the middle and throw away the half that can't contain the target.",
   time: "O(log n)",
   space: "O(1)",

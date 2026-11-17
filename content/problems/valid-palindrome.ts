@@ -17,6 +17,11 @@ Return True if it does, False if not. A string with no letters or digits at all 
     { input: 's = "race a car"', output: "False", note: '"raceacar" backwards is "racaecar"' },
   ],
   constraints: ["0 ≤ len(s) ≤ 2·10⁵", "Printable ASCII characters"],
+  brief: {
+    what: "You're given a string that can contain letters, digits, spaces and punctuation. Return True if it reads the same forwards and backwards once you ignore everything except letters and digits and treat upper and lower case as the same, and False otherwise.",
+    example: "\"Taco cat.\" cleans up to \"tacocat\", which reads the same from either end, so the answer is True.",
+    watch: "A string with no letters or digits at all, like \".,?\" or an empty string, counts as a palindrome, and digits matter: \"0P\" is False.",
+  },
   myWords:
     "Keep letters and digits, lowercase them, compare to the reverse. Follow-up for O(1) space: two pointers from both ends.",
   time: "O(n)",

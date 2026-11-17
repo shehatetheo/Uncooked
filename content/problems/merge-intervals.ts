@@ -14,6 +14,11 @@ Fuse every group of overlapping intervals into a single interval and return what
     { input: "intervals = [[1, 4], [4, 5]]", output: "[[1, 5]]", note: "touching counts as overlapping" },
   ],
   constraints: ["0 ≤ len(intervals) ≤ 10⁴", "start ≤ end in every interval", "The input is not sorted"],
+  brief: {
+    what: "You're given a list of ranges, each written as [start, end], in no particular order, and some of them overlap. Combine every group of overlapping ranges into one range and return what's left, ordered by start.",
+    example: "In [[1, 3], [2, 6], [8, 10], [15, 18]], [1, 3] and [2, 6] overlap, so they become [1, 6]; the other two overlap nothing and stay as they are, giving [[1, 6], [8, 10], [15, 18]].",
+    watch: "Ranges that only share an endpoint, like [1, 4] and [4, 5], count as overlapping and become [1, 5]; an empty list gives an empty list.",
+  },
   myWords:
     "Sort by start so anything that overlaps ends up next to each other. Then walk once: if the current interval starts before the last kept one ends, stretch that one's end; otherwise start a new one.",
   time: "O(n log n)",

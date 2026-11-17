@@ -14,6 +14,7 @@ import { ExplainPhase } from "./ExplainPhase";
 import { GhostPhase } from "./GhostPhase";
 import { ProblemText } from "./ProblemText";
 import { ChoiceQuestion } from "./Understand";
+import { BriefStep } from "./Brief";
 
 // the code editor is the heaviest part of the page; load it when the cold solve opens
 const ColdSolve = dynamic(() => import("./ColdSolve").then((m) => m.ColdSolve), { ssr: false, loading: () => <p className="label p-4">loading editor…</p> });
@@ -27,6 +28,7 @@ const PHASES = [
 type PhaseId = (typeof PHASES)[number]["id"];
 
 function UnderstandPhase({ p, onDone }: { p: Problem; onDone: () => void }) {
+  const [briefed, setBriefed] = useState(false);
   const [i, setI] = useState(0);
   const [score, setScore] = useState(0);
   const [edge, setEdge] = useState<Record<number, boolean>>({});
@@ -53,9 +55,11 @@ function UnderstandPhase({ p, onDone }: { p: Problem; onDone: () => void }) {
         )}
         <ProblemText p={p} />
       </Panel>
-      <Panel title="Before any code" className="min-w-0">
+      <Panel title="Before any code" className="order-first min-w-0 md:order-none">
         <div className="p-4">
-          {!finished ? (
+          {!briefed ? (
+            <BriefStep p={p} onStart={() => setBriefed(true)} />
+          ) : !finished ? (
             <ChoiceQuestion q={p.understand[i]!} index={i} total={3} onAnswer={(ok) => ok && setScore((s) => s + 1)} onNext={() => { if (i === 2) actions.completePhase(p.id, "understand", score === 3); setI(i + 1); }} nextLabel={i === 2 ? "Done" : "Next question"} />
           ) : (
             <div className="fade-in">

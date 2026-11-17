@@ -14,6 +14,11 @@ Return the number of different coin sequences that add up to exactly that price.
     { input: "amount = 4", output: "5", note: "1+1+1+1, 1+1+2, 1+2+1, 2+1+1, 2+2" },
   ],
   constraints: ["1 ≤ amount ≤ 45", "You have as many coins of each kind as you need"],
+  brief: {
+    what: "You're given the price of a drink as a whole number, and the machine only takes 1-unit and 2-unit coins, one at a time. Return how many different sequences of coins add up to exactly that price.",
+    example: "For a price of 3 you can pay 1+1+1, 1+2 or 2+1, which is 3 different sequences, so the answer is 3.",
+    watch: "Order matters, so 1 then 2 and 2 then 1 count as two different sequences, and a price of 1 has exactly one way.",
+  },
   myWords:
     "Look at the last coin. It's either a 1, and before it you paid amount − 1, or a 2, and before it you paid amount − 2. So ways(n) = ways(n − 1) + ways(n − 2). Build that up from the bottom, keeping only the last two values.",
   time: "O(n)",

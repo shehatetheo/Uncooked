@@ -14,6 +14,11 @@ Two scans belong to the same product if they use exactly the same characters the
     { input: 'codes = ["x1"]', output: '[["x1"]]' },
   ],
   constraints: ["0 ≤ len(codes) ≤ 10⁴", "Each code has 1 to 10 letters or digits", "Upper and lower case are different characters", "Identical scans can appear more than once"],
+  brief: {
+    what: "You're given product codes as they were scanned, where a faulty printer sometimes jumbles the characters. Two scans are the same product if they use exactly the same characters the same number of times; return the scans split into groups, one per product.",
+    example: "In [\"ab12\", \"b1a2\", \"zz9\", \"9zz\", \"q7\"], ab12 and b1a2 use the same four characters, zz9 and 9zz use the same three, and q7 matches nothing, so you get [[\"ab12\", \"b1a2\"], [\"zz9\", \"9zz\"], [\"q7\"]].",
+    watch: "Upper and lower case are different characters, so \"Ab\" and \"ab\" are different products, and identical scans that appear more than once all stay in their group.",
+  },
   myWords:
     "Scrambled versions of the same code all become the same string once you sort their characters. Use that sorted string as a dictionary key and append each scan to its key's list. The dictionary's values are the groups.",
   time: "O(n · k log k)",

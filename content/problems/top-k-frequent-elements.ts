@@ -14,6 +14,11 @@ Return the k values that appear most often. The order of your answer doesn't mat
     { input: "nums = [1], k = 1", output: "[1]" },
   ],
   constraints: ["1 ≤ len(nums) ≤ 10⁵", "1 ≤ k ≤ number of distinct values", "The top k is unique"],
+  brief: {
+    what: "You're given a list of whole numbers and a number k. Return the k values that appear most often in the list, in any order.",
+    example: "In [1, 1, 1, 2, 2, 3], 1 appears three times, 2 twice and 3 once, so with k = 2 the answer is [1, 2].",
+    watch: "Return the values themselves, not how often they appear; the order of your answer doesn't matter, and there is never a tie at the cut-off.",
+  },
   myWords:
     "Count each value with a Counter. A count can never exceed len(nums), so make one bucket per possible count and drop each value into the bucket for its count. Read the buckets from the highest count down until you have k values. No sorting needed.",
   time: "O(n)",

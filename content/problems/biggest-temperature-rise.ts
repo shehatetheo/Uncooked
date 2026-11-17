@@ -14,6 +14,11 @@ Return the biggest rise from one reading to any later reading. The earlier readi
     { input: "temps = [20, 18, 15, 9]", output: "0", note: "it only gets colder" },
   ],
   constraints: ["0 ≤ len(temps) ≤ 10⁵", "Readings are whole numbers and can be negative", "The two readings don't have to be next to each other"],
+  brief: {
+    what: "You're given hourly temperature readings in the order they were taken. Return the biggest increase from one reading to any later reading, or 0 if the temperature never goes up.",
+    example: "In [14, 11, 15, 12, 19, 16], going from the 11 up to the later 19 is a rise of 8, and no earlier-to-later pair rises more, so the answer is 8.",
+    watch: "The earlier reading must come first in time but doesn't have to be right next to the later one, readings can be negative, and no readings or a single reading gives 0.",
+  },
   myWords:
     "For any reading, the best rise that ends there starts at the lowest reading before it. So walk once, keeping the lowest temperature seen so far and the best rise so far. At each reading, update the low, then check the rise from that low.",
   time: "O(n)",

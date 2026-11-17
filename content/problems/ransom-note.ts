@@ -14,6 +14,11 @@ Return True if the magazine contains enough of every letter to build the note, a
     { input: 'ransomNote = "aa", magazine = "ab"', output: "False", note: "only one a is available" },
   ],
   constraints: ["0 ≤ len(ransomNote), len(magazine) ≤ 10⁵", "Letters can be used in any order"],
+  brief: {
+    what: "You're given two strings: a note you want to write and the text of a magazine you can cut letters out of. Return True if the magazine has enough of every letter to spell the note, and False otherwise.",
+    example: "The note \"aab\" needs two a's and one b, and the magazine \"baba\" has two a's and two b's, so there are enough letters and the answer is True.",
+    watch: "Each magazine letter can be used only once, upper and lower case are different letters (\"Aa\" can't be made from \"aa\"), and an empty note can always be written.",
+  },
   myWords:
     "Count the letters in the magazine. Then spend them: for each letter of the note, if the stock for that letter is zero the answer is False, otherwise use one up. If the whole note gets written, True.",
   time: "O(m + n)",

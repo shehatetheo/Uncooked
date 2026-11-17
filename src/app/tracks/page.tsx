@@ -2,12 +2,14 @@ import Link from "next/link";
 import { PageHeader } from "@/components/ui";
 
 const LINKS = [
+  ["/course", "Crash course", "Wednesday to Friday morning, about eight hours, everything in one path."],
   ["/plan", "Four-day plan", "Daily assignments to Friday, about two hours each."],
   ["/problems", "Coding", "Core 12, sorting and strings, made-up problems."],
   ["/sql", "SQL", "Run queries in the browser. Joins, GROUP BY, window functions."],
   ["/quiz", "Fundamentals quiz", "Tap-to-answer questions on everything your resume lists."],
   ["/resume", "Resume defense", "Line by line: what you did, the numbers, why each tool."],
   ["/behavioral", "Behavioral + SAP", "STAR stories, 60-second intro, presentation drills, SAP 101."],
+  ["/review", "Daily review", "Spaced-repetition queue across every track."],
   ["/interview", "Voice mock interview", "Talk to an AI interviewer out loud, then get scored feedback."],
   ["/timed", "Timed modes", "Sprint, mock interview, speed typing."],
   ["/sheets", "Cheat sheets", "Complexity table and Python tricks."],

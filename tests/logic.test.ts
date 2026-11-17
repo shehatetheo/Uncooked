@@ -190,3 +190,42 @@ describe("four-day plan", () => {
     }
   });
 });
+
+import { COURSE } from "@content/course";
+
+describe("crash course", () => {
+  it("is about eight hours, Wednesday to Friday morning, with unique ids", () => {
+    const lessons = COURSE.flatMap((m) => m.lessons);
+    const minutes = lessons.reduce((a, l) => a + l.minutes, 0);
+    expect(minutes).toBeGreaterThanOrEqual(450);
+    expect(minutes).toBeLessThanOrEqual(510);
+    expect(new Set(lessons.map((l) => l.id)).size).toBe(lessons.length);
+    expect(COURSE.at(-1)!.day).toBe("Fri");
+    expect(COURSE.filter((m) => m.day === "Fri").flatMap((m) => m.lessons).reduce((a, l) => a + l.minutes, 0)).toBeLessThanOrEqual(30);
+  });
+
+  it("points only at content that exists", () => {
+    const problemIds = new Set(problems.map((p) => p.id));
+    const sqlIds = new Set(sqlProblems.map((p) => p.id));
+    const groups = new Set(cards.map((c) => c.group));
+    const topics = new Set(quiz.map((q) => q.topic));
+    for (const l of COURSE.flatMap((m) => m.lessons)) {
+      const c = l.check;
+      if ("ids" in c) for (const id of c.ids) expect(c.kind === "sql" ? sqlIds.has(id) : problemIds.has(id), `${l.id}: ${id}`).toBe(true);
+      if (c.kind === "cards") {
+        for (const g of c.groups ?? []) expect(groups.has(g), `${l.id}: ${g}`).toBe(true);
+        if (c.prefix) expect(cards.filter((x) => x.id.startsWith(c.prefix!)).length, `${l.id}: ${c.prefix}`).toBeGreaterThanOrEqual(c.count);
+      }
+      if (c.kind === "quiz") expect(topics.has("asking")).toBe(true);
+      const p = l.href.match(/^\/p\/([a-z0-9-]+)/);
+      if (p) expect(problemIds.has(p[1]!), l.href).toBe(true);
+      const q = l.href.match(/^\/sql\/([a-z0-9-]+)/);
+      if (q) expect(sqlIds.has(q[1]!), l.href).toBe(true);
+    }
+  });
+
+  it("covers every part of the day", () => {
+    const text = JSON.stringify(COURSE).toLowerCase();
+    for (const must of ["two sum", "merge intervals", "sort students", "joins", "where vs having", "tide", "consistency", "skills", "star stories", "your host", "questions to ask", "sap 101", "presentation", "voice mock", "sprint", "night-before", "photo id"]) expect(text, must).toContain(must);
+  });
+});

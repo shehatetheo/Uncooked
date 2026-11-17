@@ -30,12 +30,13 @@ test("intro plays once per session and any key skips it", async ({ page }) => {
 });
 
 test("home shows the countdown and a drill plan", async ({ page }) => {
-  await page.clock.setFixedTime(new Date("2026-11-17T18:00:00"));
+  await page.clock.setFixedTime(new Date("2026-11-18T18:00:00"));
   await skipIntro(page);
   await page.goto("/");
   await expect(page.getByTestId("countdown")).toContainText(/\d+d|Today/);
-  await expect(page.getByText("Today's assignment · Tue · Day 2")).toBeVisible();
-  await expect(page.getByText("Extra, if you finish early")).toBeVisible();
+  await expect(page.getByText(/Crash course · Wed → Fri morning/)).toBeVisible();
+  await expect(page.getByTestId("course-continue")).toContainText("Read: how the day works");
+  await expect(page.getByText("Extra, if you finish early")).toBeHidden();
   await expect(page.getByRole("link", { name: /Learn: Two Sum/ })).toBeVisible();
 });
 
@@ -316,4 +317,27 @@ test("plan: today's assignment on Home, manual ticks persist, solves tick themse
   await page.waitForTimeout(600);
   await page.goto("/plan");
   await expect(page.getByTestId("task-d1-core-b")).toHaveAttribute("data-done", "true");
+});
+
+test("crash course: continue walks the path, notes expand, ticks persist", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-11-18T10:00:00"));
+  await skipIntro(page);
+  await page.goto("/course");
+  const header = page.getByTestId("course-header");
+  await expect(header).toContainText("0/");
+  await expect(page.getByTestId("course-continue")).toContainText("Read: how the day works");
+  // the first lesson's notes start open; the second's open on demand
+  await expect(page.getByTestId("module-m1").getByTestId("read-notes").first()).toContainText("government photo ID");
+  await page.getByRole("checkbox", { name: /how the day works/ }).click();
+  await expect(page.getByTestId("course-continue")).toContainText("how to answer any coding problem");
+  await page.getByTestId("module-m1").getByRole("button", { name: "▸ read notes" }).click();
+  await expect(page.getByTestId("module-m1")).toContainText("Restate it in your own words");
+  await page.getByRole("checkbox", { name: /how to answer any coding problem/ }).click();
+  await expect(page.getByTestId("course-continue")).toContainText("Two Sum: all four phases");
+  await expect(header).toContainText("2/");
+  await page.waitForTimeout(600);
+  await page.reload();
+  await expect(page.getByTestId("course-continue")).toContainText("Two Sum: all four phases");
+  await page.getByTestId("course-continue").click();
+  await expect(page).toHaveURL(/\/p\/two-sum/);
 });

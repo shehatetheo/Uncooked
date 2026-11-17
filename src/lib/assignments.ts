@@ -30,6 +30,10 @@ export function taskProgress(s: State, t: PlanTask, now: number): TaskProgress {
       const ids = catalog.filter((i) => i.kind === "quiz" && c.topics.includes(i.group)).map((i) => i.id);
       return tally(ids.filter((id) => (s.progress[id]?.attempts ?? 0) > 0).length, c.count);
     }
+    case "phase":
+      return tally(c.ids.filter((id) => s.progress[id]?.phases[c.phase]).length, c.ids.length);
+    case "mastered":
+      return tally(c.ids.filter((id) => s.progress[id]?.status === "mastered").length, c.ids.length);
     case "manual": {
       const done = !!s.planDone[t.id];
       return { done, have: done ? 1 : 0, need: 1, auto: false };

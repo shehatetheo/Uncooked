@@ -15,6 +15,10 @@ export type PlanCheck =
   | { kind: "cards"; prefix?: string; groups?: string[]; count: number }
   /** Quiz questions answered in these topics (topic labels). */
   | { kind: "quiz"; topics: string[]; count: number }
+  /** Coding problems with a given phase done (e.g. the Understand questions). */
+  | { kind: "phase"; phase: "understand" | "ghost" | "cold" | "explain"; ids: string[] }
+  /** Coding problems that reached Mastered (hint-free cold passes on two days). */
+  | { kind: "mastered"; ids: string[] }
   /** Ticked by hand. */
   | { kind: "manual" };
 

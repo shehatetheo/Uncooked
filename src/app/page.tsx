@@ -4,6 +4,8 @@ import { catalog, dueItems, mastery, TRACKS, type TrackId } from "@/lib/catalog"
 import { useNow } from "@/lib/hooks";
 import { firstUnfinished, todayPlan } from "@/lib/plan";
 import { currentDay, dayMinutes } from "@/lib/assignments";
+import { CourseHeader } from "@/components/course/CourseHeader";
+import { courseActive, totalMinutes, minutesLabel } from "@/lib/course";
 import { DayBar, DayTasks } from "@/components/plan/DayTasks";
 import { quoteOfDay } from "@/lib/quotes";
 import { DAY, dayKey, streak, SUPER_DAY } from "@/lib/srs";
@@ -25,10 +27,17 @@ export default function Home() {
   const days = new Set(s.attempts.map((a) => dayKey(a.at)));
   const next = firstUnfinished(s);
   const total = plan.reduce((a, p) => a + p.minutes, 0);
-  const assignment = now ? currentDay(now) : null;
+  const course = now ? courseActive(now) : false;
+  const assignment = now && !course ? currentDay(now) : null;
 
   return (
     <div className="flex flex-col gap-6">
+      {course && (
+        <Panel accent title={`Crash course · Wed → Fri morning · ${minutesLabel(totalMinutes)}`} right={<Link href="/course" className="label hover:text-text">Open course →</Link>}>
+          <CourseHeader now={now} />
+        </Panel>
+      )}
+
       <section className="grid items-stretch gap-3 lg:grid-cols-[1.1fr_1fr]">
         <Panel title="SAP STAR super day · Fri Nov 20 · Newtown Square">
           <div className="p-4">
@@ -52,7 +61,8 @@ export default function Home() {
               Coding is easy to medium, mostly sorting and strings, and the interviewer may invent the problem. SQL is its own interview. They will walk your resume line by line.
             </p>
             <div className="mt-5 flex flex-wrap gap-1">
-              {next && <Link href={next.href} className="btn btn-primary">Continue: {next.title}</Link>}
+              {!course && next && <Link href={next.href} className="btn btn-primary">Continue: {next.title}</Link>}
+              {course && <Link href="/course" className="btn btn-primary">Open crash course</Link>}
               <Link href="/review" className="btn">Daily review{due ? ` (${due})` : ""}</Link>
               <Link href="/interview" className="btn">Voice mock interview</Link>
             </div>

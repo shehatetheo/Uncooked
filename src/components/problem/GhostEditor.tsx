@@ -29,10 +29,12 @@ interface Props {
   showTimer?: boolean;
   autoplay: boolean;
   onAutoplayEnd: () => void;
+  /** Leading lines given for free (the def line). 0 for SQL. */
+  lockedLines?: number;
 }
 
-export function GhostEditor({ target, blind, repKey, paused, onLine, onDone, header, pills, showTimer = true, autoplay, onAutoplayEnd }: Props) {
-  const [g, setG] = useState<GhostState>(() => createGhost(target));
+export function GhostEditor({ target, blind, repKey, paused, onLine, onDone, header, pills, showTimer = true, autoplay, onAutoplayEnd, lockedLines = 1 }: Props) {
+  const [g, setG] = useState<GhostState>(() => createGhost(target, lockedLines));
   const [now, setNow] = useState(0);
   const [focused, setFocused] = useState(false);
   const [peekLine, setPeekLine] = useState<number | null>(null);
@@ -45,17 +47,19 @@ export function GhostEditor({ target, blind, repKey, paused, onLine, onDone, hea
   const wasAuto = useRef(false);
 
   const reset = useCallback(() => {
-    setG(createGhost(target));
+    setG(createGhost(target, lockedLines));
     setRevealed(new Set());
     setPeekLine(null);
     peeks.current = 0;
     stuck.current = { pos: -1, n: 0 };
     wasAuto.current = false;
-  }, [target]);
+  }, [target, lockedLines]);
   useEffect(reset, [reset, repKey]);
 
   const line = currentLine(g);
-  useEffect(() => onLine?.(Math.max(0, line - 1)), [line, onLine]);
+  useEffect(() => {
+    onLine?.(Math.max(0, line - 1));
+  }, [line, onLine]);
 
   // live clock while a rep is running
   useEffect(() => {

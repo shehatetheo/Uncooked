@@ -359,3 +359,80 @@ test("cold solve shows the briefing, timed modes don't", async ({ page }) => {
   await expect(page.getByText("Problem").first()).toBeVisible();
   await expect(page.getByText("In plain words")).toHaveCount(0);
 });
+
+test("top 10: ghost run needs a perfect rep to score 100, retries are unlimited", async ({ page }) => {
+  await skipIntro(page);
+  await page.goto("/technical");
+  await page.getByRole("button", { name: "Start ghost run" }).click();
+  await expect(page.getByRole("heading", { name: "Rank students by grade, then name" })).toBeVisible();
+  const input = page.getByTestId("ghost-editor").locator("textarea");
+  const body = "ranked = sorted(students, key=lambda s: (-s[1], s[0]))\nreturn [name for name, grade in ranked]";
+  await input.focus();
+  await page.keyboard.type("x" + body); // one wrong key first
+  await expect(page.getByTestId("ghost-result")).toContainText("/100");
+  await expect(page.getByTestId("ghost-result")).not.toContainText("100/100");
+  await page.getByRole("button", { name: "Retry" }).click();
+  await input.focus();
+  await page.keyboard.type(body);
+  await expect(page.getByText("100 · locked in")).toBeVisible();
+  await page.getByRole("button", { name: "Next question" }).click();
+  await expect(page.getByRole("heading", { name: /Compress a string/ })).toBeVisible();
+  await page.waitForTimeout(600);
+  await page.goto("/technical");
+  await expect(page.getByText("1/10 at 100%").first()).toBeVisible();
+});
+
+test("top 10: interview pops up recommendations, grades by points, retry to 100", async ({ page }) => {
+  await skipIntro(page);
+  await page.goto("/technical");
+  await page.locator("li", { hasText: "Two Sum" }).getByRole("button", { name: "Interview" }).click();
+  await page.getByRole("button", { name: "Voice on" }).click(); // voice off so the test doesn't wait on speech
+  await page.getByTestId("ask").click();
+  await expect(page.getByTestId("tech-ask")).toContainText("add up to the target");
+  await page.getByLabel("Your answer").fill("I'd use a dictionary to remember what I've seen.");
+  await expect(page.getByTestId("live-checklist")).toContainText("Uses a hash map");
+  await expect(page.getByTestId("toasts")).toContainText("+25");
+  await page.getByTestId("submit-answer").click();
+  const score = page.getByTestId("tech-score");
+  await expect(score).toBeVisible();
+  expect(Number((await score.innerText()).match(/\d+/)![0])).toBeLessThan(100);
+  await expect(page.getByTestId("tech-result")).toContainText("graded in browser");
+  await expect(page.getByTestId("what-to-say")).toContainText("dictionary");
+  await page.getByRole("button", { name: "Retry" }).click();
+  await page.getByTestId("ask").click();
+  await page.getByLabel("Your answer").fill(
+    "Can numbers repeat? I'll assume yes. Brute force checks every pair, O(n squared). Instead I keep a dictionary from number to index and check if target minus the number is already there, checking before storing so a number can't pair with itself, which handles duplicates like 3 and 3. O(n) time and O(n) space.",
+  );
+  await page.getByTestId("submit-answer").click();
+  await expect(score).toContainText("100");
+  await expect(page.getByText("100 · nailed it")).toBeVisible();
+});
+
+test("top 10: uses Claude's grade when the grader answers", async ({ page }) => {
+  await skipIntro(page);
+  await page.addInitScript(() => localStorage.setItem("uncooked:interview-passcode", "test-pass"));
+  await page.route("**/api/grade", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        score: 85,
+        points: [{ id: "inner", label: "Inner join keeps only matching rows", max: 20, earned: 20, feedback: "Clear." }],
+        summary: "Strong definitions. Add the alternative.",
+        whatToSay: "An inner join keeps only matching rows...",
+        example: "SELECT c.name FROM Customers c LEFT JOIN Orders o ON o.customerId = c.id WHERE o.id IS NULL;",
+        followUp: "What would a full outer join return?",
+        source: "ai",
+      }),
+    }),
+  );
+  await page.goto("/technical");
+  await page.locator("li", { hasText: "Inner vs. outer join" }).getByRole("button", { name: "Interview" }).click();
+  await page.getByRole("button", { name: "Voice on" }).click();
+  await page.getByTestId("ask").click();
+  await page.getByLabel("Your answer").fill("An inner join keeps matching rows, a left join keeps all rows.");
+  await page.getByTestId("submit-answer").click();
+  await expect(page.getByTestId("tech-result")).toContainText("graded by Claude");
+  await expect(page.getByTestId("tech-score")).toContainText("85");
+  await expect(page.getByTestId("tech-result")).toContainText("full outer join");
+});

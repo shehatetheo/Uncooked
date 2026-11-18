@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { createHash, timingSafeEqual } from "node:crypto";
+import { configured, fail, limited, passcodeOk } from "@/lib/interview/guard";
 import { FEEDBACK_PROMPT, systemPrompt } from "@/lib/interview/prompt";
 import { isRound, MAX_TURN_CHARS, MAX_TURNS, type Turn } from "@/lib/interview/rounds";
 
@@ -8,27 +8,6 @@ export const maxDuration = 60;
 
 const MODEL = "claude-opus-5-5";
 const client = new Anthropic(); // reads ANTHROPIC_API_KEY from the server environment only
-
-// Best-effort brake per server instance, on top of the passcode.
-const hits = new Map<string, number[]>();
-const LIMIT = 60;
-const WINDOW_MS = 10 * 60_000;
-function limited(ip: string): boolean {
-  const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter((t) => now - t < WINDOW_MS);
-  recent.push(now);
-  hits.set(ip, recent);
-  return recent.length > LIMIT;
-}
-
-const digest = (s: string) => createHash("sha256").update(s).digest();
-function passcodeOk(given: string | null): boolean {
-  const expected = process.env.INTERVIEW_PASSCODE;
-  if (!expected || !given) return false;
-  return timingSafeEqual(digest(given.trim()), digest(expected));
-}
-
-const fail = (status: number, error: string, message: string) => Response.json({ error, message }, { status });
 
 function parseTurns(raw: unknown): Turn[] | null {
   if (!Array.isArray(raw) || raw.length > MAX_TURNS) return null;
@@ -48,10 +27,9 @@ function parseTurns(raw: unknown): Turn[] | null {
  * Header: x-interview-passcode
  */
 export async function POST(req: Request): Promise<Response> {
-  if (!process.env.ANTHROPIC_API_KEY || !process.env.INTERVIEW_PASSCODE) return fail(503, "not_configured", "The AI interviewer isn't set up on this deployment.");
-  if (!passcodeOk(req.headers.get("x-interview-passcode"))) return fail(401, "bad_passcode", "Wrong passcode.");
-  const ip = (req.headers.get("x-forwarded-for") ?? "local").split(",")[0]!.trim();
-  if (limited(ip)) return fail(429, "rate_limited", "Too many requests. Wait a few minutes.");
+  if (!configured()) return fail(503, "not_configured", "The AI interviewer isn't set up on this deployment.");
+  if (!passcodeOk(req)) return fail(401, "bad_passcode", "Wrong passcode.");
+  if (limited(req)) return fail(429, "rate_limited", "Too many requests. Wait a few minutes.");
 
   let body: Record<string, unknown>;
   try {

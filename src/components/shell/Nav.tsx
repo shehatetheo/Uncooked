@@ -7,6 +7,7 @@ import { cx } from "@/components/ui";
 
 export const NAV = [
   { href: "/", label: "Home", key: "h" },
+  { href: "/technical", label: "Top 10", key: "x" },
   { href: "/course", label: "Course", key: "c" },
   { href: "/plan", label: "Plan", key: "a" },
   { href: "/problems", label: "Code", key: "p" },
@@ -22,7 +23,7 @@ export const NAV = [
 
 const MOBILE = [
   { href: "/", label: "Home" },
-  { href: "/problems", label: "Code" },
+  { href: "/technical", label: "Top 10" },
   { href: "/course", label: "Course" },
   { href: "/tracks", label: "Tracks" },
   { href: "/stats", label: "Stats" },
@@ -72,7 +73,7 @@ export function Nav() {
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-bg pb-[env(safe-area-inset-bottom)] md:hidden" aria-label="Main">
         <div className="grid grid-cols-5">
           {MOBILE.map((n) => {
-            const active = isActive(path, n.href) || (n.href === "/problems" && codeActive) || (n.href === "/tracks" && ["/sql", "/quiz", "/resume", "/behavioral", "/timed", "/sheets", "/interview", "/plan"].some((h) => path.startsWith(h)));
+            const active = isActive(path, n.href) || (n.href === "/tracks" && codeActive) || (n.href === "/tracks" && ["/problems", "/sql", "/quiz", "/resume", "/behavioral", "/timed", "/sheets", "/interview", "/plan"].some((h) => path.startsWith(h)));
             return (
               <Link key={n.href} href={n.href} aria-current={active ? "page" : undefined} className={cx("flex h-12 items-center justify-center font-pixel text-2xs uppercase tracking-wider", active ? "text-accent" : "text-dim")}>
                 {active ? `[${n.label}]` : n.label}

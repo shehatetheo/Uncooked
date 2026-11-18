@@ -56,6 +56,16 @@ export interface SavedAnswer {
   at: number;
 }
 
+/** Technical interview progress for one question. */
+export interface TechProgress {
+  ghostBest: number;
+  ghostRuns: number;
+  best: number;
+  runs: number;
+  /** Most recent scores, newest last. */
+  history: number[];
+}
+
 export interface Settings {
   sound: boolean;
   reduceMotion: boolean;
@@ -76,6 +86,7 @@ export interface State {
   drafts: Record<string, string>;
   /** Manually ticked plan tasks, by task id. */
   planDone: Record<string, boolean>;
+  tech: Record<string, TechProgress>;
   settings: Settings;
 }
 
@@ -90,7 +101,7 @@ const DEFAULT_SETTINGS: Settings = {
 };
 
 const KEY = "uncooked:v1";
-let state: State = { ready: false, progress: {}, attempts: [], answers: {}, drafts: {}, planDone: {}, settings: DEFAULT_SETTINGS };
+let state: State = { ready: false, progress: {}, attempts: [], answers: {}, drafts: {}, planDone: {}, tech: {}, settings: DEFAULT_SETTINGS };
 const listeners = new Set<() => void>();
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -138,6 +149,7 @@ export function loadStore(): Promise<void> {
       answers: saved?.answers ?? {},
       drafts: saved?.drafts ?? {},
       planDone: saved?.planDone ?? {},
+      tech: saved?.tech ?? {},
       settings: { ...DEFAULT_SETTINGS, ...saved?.settings },
     };
     emit();
@@ -260,6 +272,20 @@ export const actions = {
     update((s) => (s.drafts[id] === code ? s : { ...s, drafts: { ...s.drafts, [id]: code } }));
   },
 
+  techGhost(id: string, score: number) {
+    update((s) => {
+      const p = s.tech[id] ?? { ghostBest: 0, ghostRuns: 0, best: 0, runs: 0, history: [] };
+      return { ...s, tech: { ...s.tech, [id]: { ...p, ghostBest: Math.max(p.ghostBest, score), ghostRuns: p.ghostRuns + 1 } } };
+    });
+  },
+
+  techGraded(id: string, score: number) {
+    update((s) => {
+      const p = s.tech[id] ?? { ghostBest: 0, ghostRuns: 0, best: 0, runs: 0, history: [] };
+      return { ...s, tech: { ...s.tech, [id]: { ...p, best: Math.max(p.best, score), runs: p.runs + 1, history: [...p.history, score].slice(-10) } } };
+    });
+  },
+
   togglePlanTask(id: string) {
     update((s) => ({ ...s, planDone: { ...s.planDone, [id]: !s.planDone[id] } }));
   },
@@ -284,11 +310,12 @@ export const actions = {
       answers: data.answers ?? {},
       drafts: data.drafts ?? {},
       planDone: data.planDone ?? {},
+      tech: data.tech ?? {},
       settings: { ...DEFAULT_SETTINGS, ...data.settings },
     }));
   },
 
   wipe() {
-    update((s) => ({ ...s, progress: {}, attempts: [], answers: {}, drafts: {}, planDone: {} }));
+    update((s) => ({ ...s, progress: {}, attempts: [], answers: {}, drafts: {}, planDone: {}, tech: {} }));
   },
 };

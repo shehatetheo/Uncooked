@@ -52,3 +52,26 @@ describe("interview prompts", () => {
     expect(FEEDBACK_PROMPT).toContain("FIX BEFORE FRIDAY");
   });
 });
+
+import { POST as GRADE } from "@/app/api/grade/route";
+
+describe("grade route guards (no API call is made)", () => {
+  const saved = { key: process.env.ANTHROPIC_API_KEY, pass: process.env.INTERVIEW_PASSCODE };
+  const greq = (body: unknown, passcode: string | null = "letmein") =>
+    new Request("http://localhost/api/grade", { method: "POST", headers: { "content-type": "application/json", ...(passcode ? { "x-interview-passcode": passcode } : {}) }, body: JSON.stringify(body) });
+  beforeEach(() => {
+    process.env.ANTHROPIC_API_KEY = "test-key-not-real";
+    process.env.INTERVIEW_PASSCODE = "letmein";
+  });
+  afterEach(() => {
+    process.env.ANTHROPIC_API_KEY = saved.key;
+    process.env.INTERVIEW_PASSCODE = saved.pass;
+  });
+  it("needs the passcode", async () => {
+    expect((await GRADE(greq({ questionId: "t-two-sum", answer: "hi" }, null))).status).toBe(401);
+  });
+  it("rejects unknown questions and empty answers", async () => {
+    expect((await GRADE(greq({ questionId: "nope", answer: "hi" }))).status).toBe(400);
+    expect((await GRADE(greq({ questionId: "t-two-sum", answer: "  ", code: "" }))).status).toBe(400);
+  });
+});

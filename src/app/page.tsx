@@ -62,7 +62,8 @@ export default function Home() {
             </p>
             <div className="mt-5 flex flex-wrap gap-1">
               {!course && next && <Link href={next.href} className="btn btn-primary">Continue: {next.title}</Link>}
-              {course && <Link href="/course" className="btn btn-primary">Open crash course</Link>}
+              <Link href="/technical" className="btn btn-primary">Technical interview · top 10</Link>
+              {course && <Link href="/course" className="btn">Crash course</Link>}
               <Link href="/review" className="btn">Daily review{due ? ` (${due})` : ""}</Link>
               <Link href="/interview" className="btn">Voice mock interview</Link>
             </div>

@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { VOICE } from "@content/gen/media";
 import type { TechQuestion } from "@content/technical";
 import { AsciiBar, cx, Panel } from "@/components/ui";
 import { readPass } from "@/lib/interview/passcode";
@@ -29,6 +30,10 @@ export function TechInterview({ q, hints, voice, onNext, nextLabel }: { q: TechQ
   const [noSound, setNoSound] = useState(false);
 
   const speaker = useRef<Speaker | null>(null);
+  // Recorded clips play through a normal audio element: reliable in every browser,
+  // and not muted by the iPhone's silent switch.
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState<string | null>(null);
   const listener = useRef<Listener | null>(null);
   const answerRef = useRef("");
   answerRef.current = answer;
@@ -57,11 +62,40 @@ export function TechInterview({ q, hints, voice, onNext, nextLabel }: { q: TechQ
         setMicError(msg);
       },
     );
+    audio.current = new Audio();
+    audio.current.preload = "auto";
     return () => {
       speaker.current?.cancel();
       listener.current?.abort();
+      audio.current?.pause();
     };
   }, []);
+
+  /** Play a recorded clip; resolves false if the browser refuses, so the caller can fall back. */
+  const playClip = useCallback((key: string, onEnd?: () => void): boolean => {
+    const src = VOICE[key];
+    const el = audio.current;
+    if (!src || !el) return false;
+    speaker.current?.cancel();
+    el.pause();
+    el.src = src;
+    el.onended = () => {
+      setPlaying(null);
+      onEnd?.();
+    };
+    setPlaying(key);
+    el.play().catch(() => {
+      setPlaying(null);
+      setNoSound(true);
+      onEnd?.();
+    });
+    return true;
+  }, []);
+
+  const stopClip = () => {
+    audio.current?.pause();
+    setPlaying(null);
+  };
 
   useEffect(() => {
     if (speaker.current) speaker.current.enabled = voice;
@@ -119,6 +153,7 @@ export function TechInterview({ q, hints, voice, onNext, nextLabel }: { q: TechQ
 
   const listen = () => {
     speaker.current?.cancel();
+    audio.current?.pause();
     setMicError(null);
     setHeard("");
     setListening(true);
@@ -137,6 +172,7 @@ export function TechInterview({ q, hints, voice, onNext, nextLabel }: { q: TechQ
       if (supported.listen) listen();
     };
     sp.onIdle = open;
+    if (voice && playClip(q.id, open)) return;
     if (!(voice && supported.speak)) return open();
     // speak inside the tap: iOS only plays speech started by a user gesture
     sp.sayAll(q.ask);
@@ -155,6 +191,7 @@ export function TechInterview({ q, hints, voice, onNext, nextLabel }: { q: TechQ
   const testVoice = () => {
     const sp = speaker.current!;
     setNoSound(false);
+    if (playClip("test")) return;
     sp.onIdle = null;
     sp.sayAll("Testing, one, two, three. If you can hear me, the interviewer works.");
     setTimeout(() => {
@@ -164,6 +201,7 @@ export function TechInterview({ q, hints, voice, onNext, nextLabel }: { q: TechQ
 
   const submit = async () => {
     listener.current?.stop();
+    stopClip();
     const text = `${answerRef.current} ${heard}`.trim();
     setPhase("grading");
     const local = localGrade(q, text, code, ghostTarget(q));
@@ -198,6 +236,7 @@ export function TechInterview({ q, hints, voice, onNext, nextLabel }: { q: TechQ
 
   const retry = () => {
     speaker.current?.cancel();
+    stopClip();
     setResult(null);
     setAnswer("");
     setHeard("");
@@ -250,7 +289,16 @@ export function TechInterview({ q, hints, voice, onNext, nextLabel }: { q: TechQ
           </ul>
         </Panel>
 
-        <Panel title="If this question pops up, say this" right={supported.speak ? <button type="button" className="btn btn-sm" onClick={() => say(result.whatToSay)}>Read it to me</button> : undefined}>
+        <Panel
+          title="If this question pops up, say this"
+          right={
+            result.whatToSay === q.say && VOICE[`${q.id}-say`] ? (
+              <button type="button" className="btn btn-sm" onClick={() => (playing === `${q.id}-say` ? stopClip() : playClip(`${q.id}-say`))}>{playing === `${q.id}-say` ? "Stop" : "Hear it"}</button>
+            ) : supported.speak ? (
+              <button type="button" className="btn btn-sm" onClick={() => say(result.whatToSay)}>Read it to me</button>
+            ) : undefined
+          }
+        >
           <p className="whitespace-pre-wrap p-4 text-sm leading-relaxed" data-testid="what-to-say">{result.whatToSay}</p>
         </Panel>
 
@@ -279,14 +327,16 @@ export function TechInterview({ q, hints, voice, onNext, nextLabel }: { q: TechQ
               <div>
                 <p className="text-sm text-dim">The interviewer asks out loud, then the mic opens. Answer like it's real: restate, brute force, better approach, complexity, edge case.</p>
                 <div className="mt-3 flex flex-wrap gap-1">
-                  <button type="button" className="btn btn-primary" onClick={ask} data-testid="ask">{voice && supported.speak ? "Ask me the question" : "Show the question"}</button>
-                  {voice && supported.speak && <button type="button" className="btn" onClick={testVoice}>Test voice</button>}
+                  <button type="button" className="btn btn-primary" onClick={ask} data-testid="ask">{voice && (VOICE[q.id] || supported.speak) ? "Ask me the question" : "Show the question"}</button>
+                  {voice && (VOICE.test || supported.speak) && <button type="button" className="btn" onClick={testVoice}>Test voice</button>}
                 </div>
               </div>
             ) : (
               <>
                 <p className="text-lg leading-snug" data-testid="tech-ask">{q.ask}</p>
-                {voice && supported.speak && <button type="button" className="btn btn-sm mt-3" onClick={() => say(q.ask)}>Repeat</button>}
+                {voice && (VOICE[q.id] || supported.speak) && (
+                  <button type="button" className="btn btn-sm mt-3" onClick={() => (playing === q.id ? stopClip() : playClip(q.id) || say(q.ask))}>{playing === q.id ? "Stop" : "Repeat"}</button>
+                )}
               </>
             )}
           </div>

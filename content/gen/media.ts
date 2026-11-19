@@ -38,3 +38,27 @@ export const CLIPS: Record<string, string> = {
   "number-of-islands": "/clips/number-of-islands.mp4",
   "valid-parentheses": "/clips/valid-parentheses.mp4",
 };
+/** Recorded interviewer audio: <id>.mp3 (question) and <id>-say.mp3 (model answer). */
+export const VOICE: Record<string, string> = {
+  "t-compress-say": "/voice/t-compress-say.mp3",
+  "t-compress": "/voice/t-compress.mp3",
+  "t-frequent-word-say": "/voice/t-frequent-word-say.mp3",
+  "t-frequent-word": "/voice/t-frequent-word.mp3",
+  "t-group-anagrams-say": "/voice/t-group-anagrams-say.mp3",
+  "t-group-anagrams": "/voice/t-group-anagrams.mp3",
+  "t-merge-intervals-say": "/voice/t-merge-intervals-say.mp3",
+  "t-merge-intervals": "/voice/t-merge-intervals.mp3",
+  "t-palindrome-say": "/voice/t-palindrome-say.mp3",
+  "t-palindrome": "/voice/t-palindrome.mp3",
+  "t-parentheses-say": "/voice/t-parentheses-say.mp3",
+  "t-parentheses": "/voice/t-parentheses.mp3",
+  "t-sort-students-say": "/voice/t-sort-students-say.mp3",
+  "t-sort-students": "/voice/t-sort-students.mp3",
+  "t-sql-duplicates-say": "/voice/t-sql-duplicates-say.mp3",
+  "t-sql-duplicates": "/voice/t-sql-duplicates.mp3",
+  "t-sql-joins-say": "/voice/t-sql-joins-say.mp3",
+  "t-sql-joins": "/voice/t-sql-joins.mp3",
+  "t-two-sum-say": "/voice/t-two-sum-say.mp3",
+  "t-two-sum": "/voice/t-two-sum.mp3",
+  "test": "/voice/test.mp3",
+};

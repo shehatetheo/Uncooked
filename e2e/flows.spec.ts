@@ -452,3 +452,15 @@ test("top 10: a video before each question, final videos, and no-sound never lea
   await page.getByTestId("ask").click();
   await expect(page.getByLabel("Your answer")).toBeVisible({ timeout: 8000 });
 });
+
+test("top 10: the interviewer plays a recorded clip, and the mic opens when it ends", async ({ page }) => {
+  await skipIntro(page);
+  await page.goto("/technical");
+  await page.locator("li", { hasText: "Two Sum" }).getByRole("button", { name: "Interview" }).click();
+  const res = await page.request.get("/voice/t-two-sum.mp3");
+  expect(res.status()).toBe(200);
+  expect(res.headers()["content-type"]).toContain("audio");
+  await page.getByTestId("ask").click();
+  // either it plays and ends, or the browser blocks audio; both must open the answer box
+  await expect(page.getByLabel("Your answer")).toBeVisible({ timeout: 15000 });
+});

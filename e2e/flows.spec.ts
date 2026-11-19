@@ -436,3 +436,19 @@ test("top 10: uses Claude's grade when the grader answers", async ({ page }) => 
   await expect(page.getByTestId("tech-score")).toContainText("85");
   await expect(page.getByTestId("tech-result")).toContainText("full outer join");
 });
+
+test("top 10: a video before each question, final videos, and no-sound never leaves you stuck", async ({ page }) => {
+  await skipIntro(page);
+  await page.goto("/technical");
+  await expect(page.getByTestId("final-videos")).toContainText("SAP Global Student Training and Rotation Experience");
+  await page.locator("li", { hasText: "Two Sum" }).getByRole("button", { name: "Interview" }).click();
+  const watch = page.getByTestId("watch-first");
+  await expect(watch).toHaveAttribute("open", "");
+  await watch.getByRole("button", { name: /Play Two Sum/ }).click();
+  await expect(watch.locator("iframe")).toHaveAttribute("src", /youtube-nocookie\.com\/embed\/KLlXCFG5TnA/);
+  await watch.getByRole("checkbox", { name: /watched/ }).click();
+  await expect(page.getByTestId("watch-first")).toContainText("· watched");
+  // Voice stays on: headless Chromium plays no audio, so the app must say so and still open the answer box.
+  await page.getByTestId("ask").click();
+  await expect(page.getByLabel("Your answer")).toBeVisible({ timeout: 8000 });
+});

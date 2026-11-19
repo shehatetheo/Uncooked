@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { TECH, type TechQuestion } from "@content/technical";
+import { FINAL_VIDEOS, TECH, type TechQuestion } from "@content/technical";
+import { VideoCard } from "@/components/technical/VideoCard";
 import { TechGhost } from "@/components/technical/TechGhost";
 import { TechInterview } from "@/components/technical/TechInterview";
 import { AsciiBar, cx, PageHeader, Panel, QuoteLine } from "@/components/ui";
@@ -14,7 +15,7 @@ type View = { kind: "overview" } | { kind: "question"; index: number; stage: Sta
 const pad = (n: number) => String(n).padStart(2, "0");
 
 export default function TechnicalPage() {
-  const { tech, ready } = useStore();
+  const { tech, ready, planDone } = useStore();
   const [view, setView] = useState<View>({ kind: "overview" });
   const [hints, setHints] = useState(true);
   const [voice, setVoice] = useState(true);
@@ -68,6 +69,12 @@ export default function TechnicalPage() {
           <h1 className="h1">{q.title}</h1>
           <p className="mt-1 text-sm text-dim">{q.why}</p>
         </div>
+        <details className="panel" open={!planDone[`vid-${q.video.id}`]} data-testid="watch-first">
+          <summary className="label cursor-pointer px-3 py-2 text-accent">Watch first · {q.video.length}{planDone[`vid-${q.video.id}`] ? " · watched" : ""}</summary>
+          <div className="mx-auto max-w-[720px] p-3">
+            <VideoCard key={q.video.id} v={q.video} />
+          </div>
+        </details>
         {view.stage === "ghost" ? (
           <TechGhost key={`g-${q.id}`} q={q} onNext={next ?? (() => setView({ ...view, stage: "interview" }))} nextLabel={next ? (last ? "Finish ghost run" : "Next question") : "Now the interview"} />
         ) : (
@@ -117,7 +124,7 @@ export default function TechnicalPage() {
 
       <section className="grid gap-3 md:grid-cols-3">
         <div className="panel p-4">
-          <p className="label">Step 1 · ghost type</p>
+          <p className="label">Step 1 · watch, then ghost type</p>
           <p className="mt-1 font-pixel text-xl"><span className={ghostDone === 10 ? "text-accent" : "text-text"}>{ready ? ghostDone : 0}</span><span className="text-sm text-dim">/10 at 100%</span></p>
           <button type="button" className="btn btn-primary mt-3 w-full" onClick={() => startRun("ghost")}>{ghostDone ? "Continue ghost run" : "Start ghost run"}</button>
         </div>
@@ -144,7 +151,7 @@ export default function TechnicalPage() {
                 <span className="font-pixel text-2xs text-ghost">{pad(i + 1)}</span>
                 <span className="min-w-0">
                   <span className="block truncate text-sm">{q.title}</span>
-                  <span className="block text-xs text-dim">{q.kind === "sql" ? "SQL" : "Python"} · {q.why}</span>
+                  <span className="block text-xs text-dim">{q.kind === "sql" ? "SQL" : "Python"} · <span className={planDone[`vid-${q.video.id}`] ? "text-accent" : "text-second"}>▶ {q.video.length}{planDone[`vid-${q.video.id}`] ? " watched" : ""}</span> · {q.why}</span>
                 </span>
                 <span className="col-start-2 text-xs tabular-nums md:col-start-auto">ghost <span className={g === 100 ? "text-accent" : "text-text"}>{ready ? g : 0}%</span></span>
                 <span className="col-start-2 text-xs tabular-nums md:col-start-auto">interview <span className={b === 100 ? "text-accent" : "text-text"}>{ready ? b : 0}</span>/100</span>
@@ -155,6 +162,18 @@ export default function TechnicalPage() {
               </li>
             );
           })}
+        </ul>
+      </Panel>
+
+      <Panel title="Final watch · before Friday" accent>
+        <div className="flex flex-col gap-1 border-b border-line px-3 py-2">
+          <p className="text-sm text-dim">Last thing to watch: SAP's own STAR video, why SAP, then the six-step method for any coding question, including one the interviewer makes up. About 15 minutes. Tip: set YouTube to 1.5x.</p>
+        </div>
+        <div className="grid gap-4 p-3 md:grid-cols-3" data-testid="final-videos">
+          {FINAL_VIDEOS.map((v) => <VideoCard key={v.id} v={v} compact />)}
+        </div>
+        <ul className="border-t border-line px-3 py-2 text-xs text-dim">
+          {FINAL_VIDEOS.map((v) => <li key={v.id}><span className="text-second">▸ </span>{v.note}</li>)}
         </ul>
       </Panel>
 

@@ -17,6 +17,16 @@ export interface RubricPoint {
   tip: string;
 }
 
+export interface Video {
+  /** YouTube video id. */
+  id: string;
+  title: string;
+  channel: string;
+  length: string;
+  /** What to watch for, or how it differs from our version. */
+  note: string;
+}
+
 export interface TechQuestion {
   id: string;
   title: string;
@@ -25,6 +35,8 @@ export interface TechQuestion {
   ref: string;
   /** Why this one is likely. */
   why: string;
+  /** Watch before practising. */
+  video: Video;
   /** What the interviewer says, out loud. */
   ask: string;
   rubric: RubricPoint[];
@@ -45,6 +57,7 @@ export const TECH: TechQuestion[] = [
     kind: "code",
     ref: "sort-students",
     why: "Sorting was exactly what the STAR student got, and interviewers love a tie-break rule.",
+    video: { id: "EvjBFPydY7w", title: "Python tutorials: Sorting (reverse, key, multiple attributes / value)", channel: "PyMoondra", length: "5:42", note: "How key= works and sorting by more than one thing. That is the whole trick for this question." },
     ask: "Here's one I made up. You get a list of students, each one a name and a grade. Return just the names, ranked by grade from highest to lowest, and if two students have the same grade, put them in alphabetical order. How would you do it?",
     rubric: [
       { id: "restate", label: "Restates the task: names out, highest grade first", max: 10, detect: ["\\bnames?\\b", "\\b(highest|descending|biggest|largest|best|high to low|top)\\b"], tip: "Restate it first: \"I return just the names, highest grade first.\"" },
@@ -63,6 +76,7 @@ export const TECH: TechQuestion[] = [
     kind: "code",
     ref: "compress-string",
     why: "Classic made-up string manipulation: loops, counting and building a string.",
+    video: { id: "jyRCPeNsmeE", title: "String Compression - Leetcode 443 - Python", channel: "Lit Code", length: "6:50", note: "LeetCode's version edits the list in place and leaves out the 1s, but counting each run is the same idea." },
     ask: "Write a function that compresses a string by counting runs of the same character. So a, a, a, b, c, c becomes a3, b1, c2. Talk me through how you'd do it.",
     rubric: [
       { id: "runs", label: "Understands runs of the same character in a row", max: 10, detect: ["\\b(run|runs|consecutive|in a row|repeat|repeated|streak)\\b"], tip: "Define it: a run is the same character repeated in a row." },
@@ -82,6 +96,7 @@ export const TECH: TechQuestion[] = [
     kind: "code",
     ref: "two-sum",
     why: "The most common warm-up in the world, and the cleanest way to show you know hash maps.",
+    video: { id: "KLlXCFG5TnA", title: "Two Sum - Leetcode 1 - HashMap - Python", channel: "NeetCode", length: "8:26", note: "Watch how he goes from the brute force to the hash map. Say it the same way." },
     ask: "Given a list of numbers and a target, return the positions of the two numbers that add up to the target. You can assume there's exactly one answer.",
     rubric: [
       { id: "clarify", label: "Asks a clarifying question or states an assumption", max: 10, detect: ["\\b(empty|edge case|what if|assume|clarif\\w*|duplicates?|negative|sorted)\\b"], tip: "Ask one quick question first: can numbers repeat, can they be negative?" },
@@ -101,6 +116,7 @@ export const TECH: TechQuestion[] = [
     kind: "sql",
     ref: "customers-who-never-order",
     why: "Inner vs. outer join is the SQL question they've asked before. Expect it.",
+    video: { id: "zGSv0VaOtR0", title: "SQL Joins: Difference Between Inner/Left/Right/Outer Joins", channel: "JomaClass", length: "10:52", note: "Exactly the question they asked before. Pause on the diagrams and say each join out loud." },
     ask: "SQL time. First, what's the difference between an inner join and an outer join? Then, with a Customers table that has id and name, and an Orders table that has id and customerId, write a query that returns the names of customers who have never placed an order.",
     rubric: [
       { id: "inner", label: "Inner join keeps only matching rows", max: 20, detect: ["\\binner\\b", "\\b(match|matches|matching|both)\\b"], tip: "Define inner join: only rows that match in both tables." },
@@ -119,6 +135,7 @@ export const TECH: TechQuestion[] = [
     kind: "code",
     ref: "valid-palindrome",
     why: "String cleaning plus a classic follow-up about O(1) space.",
+    video: { id: "jJXJ16kPFWg", title: "Valid Palindrome - Leetcode 125 - Python", channel: "NeetCode", length: "14:58", note: "Covers both versions: clean and reverse, then two pointers for O(1) space." },
     ask: "Given a string, tell me whether it reads the same forwards and backwards, ignoring uppercase versus lowercase and ignoring anything that isn't a letter or a digit. For example, \"A man, a plan, a canal: Panama\" should be true.",
     rubric: [
       { id: "rules", label: "Restates the rules: ignore case and non-alphanumerics", max: 15, detect: ["\\b(ignore|ignoring|skip|lower ?case|case|alphanumeric|letters? (and|or) (digits|numbers)|punctuation|spaces?)\\b"], tip: "Restate the rules: ignore case, skip anything that isn't a letter or digit." },
@@ -137,6 +154,7 @@ export const TECH: TechQuestion[] = [
     kind: "code",
     ref: "most-frequent-word",
     why: "A made-up string + counting problem that real interviewers invent all the time.",
+    video: { id: "s19QsN5Dva8", title: "Most Common Word - LeetCode Solutions #819 (Python)", channel: "Peter Hu", length: "5:18", note: "LeetCode's version also bans some words; ignore that part. Lowercase, strip punctuation, count." },
     ask: "Here's another one I made up. Given a paragraph of text, return the most common word. Ignore capitalization and punctuation. How would you approach it?",
     rubric: [
       { id: "clarify", label: "Asks about ties or what counts as a word", max: 10, detect: ["\\b(tie|ties|tied|both appear|first one|apostrophe|what counts)\\b"], tip: "Ask about ties: if two words tie, which one wins?" },
@@ -155,6 +173,7 @@ export const TECH: TechQuestion[] = [
     kind: "code",
     ref: "group-anagrams",
     why: "Combines sorting and hash maps in one problem, a favourite medium.",
+    video: { id: "vzdNOK2oB2E", title: "Group Anagrams - Categorize Strings by Count - Leetcode 49", channel: "NeetCode", length: "8:12", note: "He uses the 26-letter count key. Know it as the faster follow-up to the sorted-word key." },
     ask: "Given a list of words, group together the words that are anagrams of each other. For example eat, tea and ate go in one group, and tan and nat in another.",
     rubric: [
       { id: "restate", label: "Anagrams = same letters rearranged", max: 10, detect: ["\\b(same letters|rearrang\\w*|anagrams?)\\b"], tip: "Define it: anagrams have exactly the same letters, rearranged." },
@@ -173,6 +192,7 @@ export const TECH: TechQuestion[] = [
     kind: "code",
     ref: "merge-intervals",
     why: "The go-to sort-then-scan problem, and it looks like a scheduling question an interviewer would invent.",
+    video: { id: "44H3cEC2fFM", title: "Merge Intervals - Sorting - Leetcode 56", channel: "NeetCode", length: "10:15", note: "Sort by start, then compare with the last merged range. Watch why max() matters." },
     ask: "You get a list of time ranges, like 1 to 3, 2 to 6, 8 to 10, and 15 to 18. Merge any ranges that overlap and return the result.",
     rubric: [
       { id: "clarify", label: "Clarifies: unsorted input? do touching ranges merge?", max: 10, detect: ["\\b(touch|touching|share an? (end|endpoint)|sorted|unsorted|empty|in order)\\b"], tip: "Ask: is it sorted already, and do ranges that just touch, like 1-4 and 4-5, merge?" },
@@ -191,6 +211,7 @@ export const TECH: TechQuestion[] = [
     kind: "sql",
     ref: "duplicate-emails",
     why: "The most common aggregation question, and it leads straight into WHERE vs. HAVING.",
+    video: { id: "dCNjUOc1cBY", title: "Having vs Where in MySQL | Beginner MySQL Series", channel: "Alex The Analyst", length: "3:46", note: "The WHERE vs HAVING explanation in under four minutes. That is the follow-up they'll ask." },
     ask: "There's a Person table with an id and an email column. Write a query that returns every email address that appears more than once. And tell me why you used the clauses you did.",
     rubric: [
       { id: "group", label: "GROUP BY email", max: 30, detect: ["group by|grouping by|group them by"], tip: "Start with GROUP BY email, so each email becomes one group." },
@@ -208,6 +229,7 @@ export const TECH: TechQuestion[] = [
     kind: "code",
     ref: "valid-parentheses",
     why: "The stack problem every interviewer knows. Quick to state, easy to get subtly wrong.",
+    video: { id: "WTzjTskDFMg", title: "Valid Parentheses - Stack - Leetcode 20 - Python", channel: "NeetCode", length: "10:43", note: "Push openers, pop on closers, and don't forget the empty-stack check at the end." },
     ask: "Given a string made of brackets, round, square and curly, tell me whether it's balanced: every opening bracket closed by the same kind, in the right order.",
     rubric: [
       { id: "clarify", label: "Clarifies inputs (empty string, only brackets)", max: 10, detect: ["\\b(empty|only brackets|other characters|valid characters)\\b"], tip: "Ask: is an empty string valid, and is it only brackets?" },
@@ -220,6 +242,13 @@ export const TECH: TechQuestion[] = [
     say: "I'll assume the string is only brackets and that empty counts as valid. I use a stack, because the most recently opened bracket has to close first. I keep a small dictionary mapping each closer to its opener. For each character: if it's an opener, I push it. If it's a closer, I check the stack isn't empty and pop the top; if that isn't the matching opener, I return false. At the end, the stack must be empty, otherwise something was never closed. That's O(n) time and O(n) space in the worst case.",
     followUp: { q: "What if there's only one kind of bracket?", a: "You don't need a stack: keep a counter, add one for open and subtract one for close. If it ever goes negative, or isn't zero at the end, it's invalid. O(1) space." },
   },
+];
+
+/** Watch these last, before Friday: the program itself, why SAP, and how to run any coding question. */
+export const FINAL_VIDEOS: Video[] = [
+  { id: "qhXO1VYlDEM", title: "SAP Global Student Training and Rotation Experience", channel: "Life At SAP", length: "0:53", note: "SAP's own STAR video. Under a minute; it gives you the program's language for your Why STAR answer." },
+  { id: "K3GuI5JV6rc", title: "Why SAP? – Employees talk about their roles at SAP", channel: "Life At SAP", length: "2:09", note: "Real SAP employees on why they chose SAP. Steal the ideas, not the words, for your Why SAP answer." },
+  { id: "Q4C3ZRJLnac", title: "How to Solve ANY Coding Interview Question in 6 Steps", channel: "Anthony D. Mays", length: "12:33", note: "The method to use on Friday when the interviewer makes up a problem you've never seen. Watch this one last." },
 ];
 
 export const techById = new Map(TECH.map((q) => [q.id, q]));

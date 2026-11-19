@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { TechQuestion } from "@content/technical";
 import { AsciiBar, cx, Panel } from "@/components/ui";
 import { readPass } from "@/lib/interview/passcode";
-import { canListen, canSpeak, Listener, Speaker } from "@/lib/interview/speech";
+import { canListen, canSpeak, Listener, NO_SOUND_HELP, Speaker } from "@/lib/interview/speech";
 import { blip } from "@/lib/sound";
 import { actions, useStore } from "@/lib/store";
 import { liveCheck, localGrade, type GradeResult } from "@/lib/technical";
@@ -26,6 +26,7 @@ export function TechInterview({ q, hints, voice, onNext, nextLabel }: { q: TechQ
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [showFollow, setShowFollow] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
+  const [noSound, setNoSound] = useState(false);
 
   const speaker = useRef<Speaker | null>(null);
   const listener = useRef<Listener | null>(null);
@@ -126,14 +127,39 @@ export function TechInterview({ q, hints, voice, onNext, nextLabel }: { q: TechQ
 
   const ask = () => {
     const sp = speaker.current!;
-    sp.unlock();
+    setNoSound(false);
     setPhase("asking");
-    sp.onIdle = () => {
+    let opened = false;
+    const open = () => {
+      if (opened) return;
+      opened = true;
       setPhase("answering");
       if (supported.listen) listen();
     };
-    if (voice && supported.speak) sp.sayAll(q.ask);
-    else sp.onIdle();
+    sp.onIdle = open;
+    if (!(voice && supported.speak)) return open();
+    // speak inside the tap: iOS only plays speech started by a user gesture
+    sp.sayAll(q.ask);
+    // If nothing is audible, say so and move on instead of waiting forever.
+    setTimeout(() => {
+      if (!sp.audible && !opened) {
+        setNoSound(true);
+        sp.cancel();
+        open();
+      }
+    }, 1800);
+    // Safety net: some browsers never report the end of speech.
+    setTimeout(open, Math.max(6000, q.ask.split(/\s+/).length * 450 + 2500));
+  };
+
+  const testVoice = () => {
+    const sp = speaker.current!;
+    setNoSound(false);
+    sp.onIdle = null;
+    sp.sayAll("Testing, one, two, three. If you can hear me, the interviewer works.");
+    setTimeout(() => {
+      if (!sp.audible) setNoSound(true);
+    }, 1500);
   };
 
   const submit = async () => {
@@ -248,10 +274,14 @@ export function TechInterview({ q, hints, voice, onNext, nextLabel }: { q: TechQ
       <div className="flex min-w-0 flex-col gap-3">
         <Panel title="Interviewer" accent={phase === "asking"} right={<span className="text-xs text-dim">best <span className={best === 100 ? "text-accent" : "text-text"}>{best}</span>/100</span>}>
           <div className="p-4">
+            {noSound && <p className="mb-3 text-sm text-second" role="status" data-testid="no-sound">{NO_SOUND_HELP}</p>}
             {phase === "ready" ? (
               <div>
                 <p className="text-sm text-dim">The interviewer asks out loud, then the mic opens. Answer like it's real: restate, brute force, better approach, complexity, edge case.</p>
-                <button type="button" className="btn btn-primary mt-3" onClick={ask} data-testid="ask">{voice && supported.speak ? "Ask me the question" : "Show the question"}</button>
+                <div className="mt-3 flex flex-wrap gap-1">
+                  <button type="button" className="btn btn-primary" onClick={ask} data-testid="ask">{voice && supported.speak ? "Ask me the question" : "Show the question"}</button>
+                  {voice && supported.speak && <button type="button" className="btn" onClick={testVoice}>Test voice</button>}
+                </div>
               </div>
             ) : (
               <>

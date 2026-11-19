@@ -120,6 +120,26 @@ export class Listener {
   }
 }
 
+/** An English voice if the device has one; some phones default to another language. */
+let cachedVoice: SpeechSynthesisVoice | null | undefined;
+function englishVoice(): SpeechSynthesisVoice | null {
+  if (!canSpeak()) return null;
+  if (cachedVoice !== undefined && cachedVoice !== null) return cachedVoice;
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices.length) return null; // not loaded yet; the default voice is fine
+  cachedVoice = voices.find((v) => v.lang === "en-US" && v.localService) ?? voices.find((v) => v.lang.startsWith("en")) ?? null;
+  return cachedVoice;
+}
+if (typeof window !== "undefined" && "speechSynthesis" in window) {
+  window.speechSynthesis.addEventListener?.("voiceschanged", () => {
+    cachedVoice = undefined;
+  });
+}
+
+/** What to tell someone who can't hear the voice. */
+export const NO_SOUND_HELP =
+  "No sound? On iPhone, the Ring/Silent switch on the side mutes website voices: flip it so no orange shows, then turn the volume up. Also check Voice is on. The question is always written on screen too.";
+
 /** Speaks streamed text sentence by sentence, so the voice starts before the reply is done. */
 export class Speaker {
   enabled = true;
@@ -137,8 +157,14 @@ export class Speaker {
   }
 
   begin() {
-    this.cancel();
+    // Safari can drop an utterance spoken right after cancel(), so only cancel when something is playing.
+    if (this.pending.size || (canSpeak() && (window.speechSynthesis.speaking || window.speechSynthesis.pending))) this.cancel();
     this.streaming = true;
+  }
+
+  /** Is the browser actually producing speech right now? */
+  get audible() {
+    return canSpeak() && (window.speechSynthesis.speaking || window.speechSynthesis.pending);
   }
 
   feed(chunk: string) {
@@ -179,6 +205,8 @@ export class Speaker {
     const u = new SpeechSynthesisUtterance(text.trim());
     u.lang = "en-US";
     u.rate = 1.03;
+    const voice = englishVoice();
+    if (voice) u.voice = voice;
     const done = () => {
       this.pending.delete(u);
       this.checkIdle();
@@ -186,6 +214,7 @@ export class Speaker {
     u.onend = done;
     u.onerror = done;
     this.pending.add(u);
+    if (window.speechSynthesis.paused) window.speechSynthesis.resume();
     window.speechSynthesis.speak(u);
   }
 

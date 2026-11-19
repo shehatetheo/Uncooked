@@ -35,3 +35,18 @@ describe("technical interview questions", () => {
     expect(point("it's o of n log n time")).toBe(false);
   });
 });
+
+import { FINAL_VIDEOS } from "@content/technical";
+
+describe("technical interview videos", () => {
+  it("every question has one video and there are three final videos, all well-formed", () => {
+    const all = [...TECH.map((q) => q.video), ...FINAL_VIDEOS];
+    expect(FINAL_VIDEOS).toHaveLength(3);
+    for (const v of all) {
+      expect(v.id, v.title).toMatch(/^[A-Za-z0-9_-]{11}$/);
+      expect(v.length, v.title).toMatch(/^\d{1,2}:\d{2}$/);
+      expect(v.note.length, v.title).toBeGreaterThan(20);
+    }
+    expect(new Set(all.map((v) => v.id)).size).toBe(all.length);
+  });
+});

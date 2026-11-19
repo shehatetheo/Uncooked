@@ -6,7 +6,7 @@ import { cx, fmtTime, PageHeader, Panel, QuoteLine } from "@/components/ui";
 import { useNow } from "@/lib/hooks";
 import type { OfflineQuestion } from "@/lib/interview/offline";
 import { ROUNDS, type Round, type Turn } from "@/lib/interview/rounds";
-import { canListen, canSpeak, Listener, Speaker } from "@/lib/interview/speech";
+import { canListen, canSpeak, Listener, NO_SOUND_HELP, Speaker } from "@/lib/interview/speech";
 import { quoteFor } from "@/lib/quotes";
 import { blip } from "@/lib/sound";
 import { actions, useStore } from "@/lib/store";
@@ -100,6 +100,7 @@ export default function InterviewPage() {
   const [feedback, setFeedback] = useState("");
   const [feedbackDone, setFeedbackDone] = useState(false);
   const [startedAt, setStartedAt] = useState(0);
+  const [noSound, setNoSound] = useState(false);
 
   const [queue, setQueue] = useState<OfflineQuestion[]>([]);
   const [qi, setQi] = useState(0);
@@ -364,6 +365,12 @@ export default function InterviewPage() {
               <button type="button" className="btn btn-sm" aria-pressed={voice} onClick={() => setVoice(!voice)}>{voice ? "[■] interviewer speaks" : "[ ] text only"}</button>
               <button type="button" className="btn btn-sm" aria-pressed={handsFree} disabled={!support.listen} onClick={() => setHandsFree(!handsFree)}>{handsFree ? "[■] hands-free" : "[ ] tap to answer"}</button>
             </div>
+            {support.speak && (
+              <div className="flex flex-wrap items-center gap-2">
+                <button type="button" className="btn btn-sm" onClick={() => { const sp = speaker.current!; setNoSound(false); sp.onIdle = null; sp.sayAll("Testing, one, two, three. If you can hear me, the interviewer works."); setTimeout(() => { if (!sp.audible) setNoSound(true); }, 1500); }}>Test voice</button>
+                {noSound && <span className="text-xs text-second" role="status">{NO_SOUND_HELP}</span>}
+              </div>
+            )}
             {!support.listen && <p className="text-xs text-second">This browser can't do speech recognition here. Answer with the keyboard's dictation key or by typing; the interviewer still speaks.</p>}
             {support.listen && <p className="text-xs text-dim">Hands-free starts listening when the interviewer stops. Tap Done talking when you finish an answer.</p>}
           </div>

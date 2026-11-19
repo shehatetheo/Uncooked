@@ -15,7 +15,12 @@ export interface RubricPoint {
   detect: string[];
   /** Pop-up recommendation when this point is still missing. */
   tip: string;
+  /** How the simulator's interviewer asks for this point. Defaults from the id. */
+  probe?: Probe;
 }
+
+/** The kinds of follow-up question the interviewer asks when a point is missing. */
+export type Probe = "clarify" | "brute" | "core" | "why" | "alt" | "example" | "complexity" | "edge";
 
 export interface Video {
   /** YouTube video id. */
@@ -123,7 +128,7 @@ export const TECH: TechQuestion[] = [
       { id: "outer", label: "Outer/left join keeps unmatched rows too (with NULLs)", max: 20, detect: ["\\b(left|outer)\\b", "\\b(all|every|keeps?|unmatched|even if)\\b"], tip: "Define left join: every row from the left table, matched or not; missing side is NULL." },
       { id: "leftjoin", label: "Uses LEFT JOIN Customers → Orders", max: 20, detect: ["left join|left outer join"], tip: "Say the query: Customers LEFT JOIN Orders on the customer id." },
       { id: "isnull", label: "Filters WHERE order is NULL", max: 20, detect: ["\\bnull\\b"], tip: "Finish it: WHERE the order id IS NULL, meaning no match." },
-      { id: "example", label: "Gives a concrete example", max: 10, detect: ["\\b(example|for instance|like if|say (a|we have)|imagine)\\b"], tip: "Add a tiny example: a customer with no orders vanishes in an inner join." },
+      { id: "example", label: "Gives a concrete example", max: 10, detect: ["\\b(example|for instance|like if|say (a|we have)|imagine)\\b"], tip: "Add a tiny example: a customer with no orders vanishes in an inner join.", probe: "example" },
       { id: "alt", label: "Mentions an alternative (NOT EXISTS / NOT IN)", max: 10, detect: ["\\b(not exists|not in|subquery)\\b"], tip: "Mention an alternative: NOT EXISTS with a subquery." },
     ],
     say: "An inner join keeps only rows that match in both tables. An outer join also keeps the rows that don't match: a left join keeps every row from the left table, and where there's no match, the right side's columns are NULL. For example, a customer with no orders disappears in an inner join but shows up in a left join with NULLs. So for customers who never ordered: SELECT name FROM Customers, LEFT JOIN Orders ON the order's customerId equals the customer's id, WHERE the order id IS NULL. The NULL means no matching order. NOT EXISTS with a subquery would work too.",
@@ -140,7 +145,7 @@ export const TECH: TechQuestion[] = [
     rubric: [
       { id: "rules", label: "Restates the rules: ignore case and non-alphanumerics", max: 15, detect: ["\\b(ignore|ignoring|skip|lower ?case|case|alphanumeric|letters? (and|or) (digits|numbers)|punctuation|spaces?)\\b"], tip: "Restate the rules: ignore case, skip anything that isn't a letter or digit." },
       { id: "reverse", label: "Clean, then compare with the reverse", max: 25, detect: ["\\b(reverse|reversed|backwards|slice)\\b"], tip: "Give the simple version: clean it, lowercase it, compare to its reverse." },
-      { id: "pointers", label: "Two pointers from both ends", max: 25, detect: ["\\b(two pointers?|left and right|both ends|each end|left pointer|start and end|from the outside)\\b"], tip: "Give the better version: one pointer at each end, moving inward." },
+      { id: "pointers", label: "Two pointers from both ends", max: 25, detect: ["\\b(two pointers?|left and right|both ends|each end|left pointer|start and end|from the outside)\\b"], tip: "Give the better version: one pointer at each end, moving inward.", probe: "alt" },
       { id: "complexity", label: "O(n) time", max: 15, detect: [LINEAR], tip: "Give the time: O(n)." },
       { id: "space", label: "Two pointers use O(1) extra space", max: 10, detect: ["constant (space|memory)|o\\s*\\(\\s*1\\s*\\)|\\bo of (1|one)\\b|no extra (space|memory)"], tip: "Point out the win: two pointers need only O(1) extra space." },
       { id: "edge", label: "Edge cases (empty, only punctuation)", max: 10, detect: ["\\b(empty|only punctuation|no letters|single character|one character)\\b"], tip: "Mention an edge case: an empty or all-punctuation string is a palindrome." },
@@ -180,7 +185,7 @@ export const TECH: TechQuestion[] = [
       { id: "key", label: "Sorted letters as the group key", max: 25, detect: ["\\b(sort|sorted|sorting)\\b", "\\b(key|keys)\\b"], tip: "Say the key idea: sort each word's letters, so eat becomes a-e-t, and use that as the key." },
       { id: "dict", label: "Dictionary from key to list of words", max: 25, detect: ["\\b(dictionary|dict|hash ?map|map|defaultdict)\\b", "\\b(list|lists|group|groups|append)\\b"], tip: "Store groups: a dictionary from the key to a list of words." },
       { id: "complexity", label: "O(n · k log k)", max: 20, detect: ["k\\s*log\\s*k|klogk|k login"], tip: "Give the complexity: n words times k log k to sort each word." },
-      { id: "count", label: "Mentions the letter-count key for O(n · k)", max: 10, detect: ["\\b(26|letter counts?|character counts?|count of each letter|counts of letters)\\b"], tip: "Bonus: a tuple of 26 letter counts as the key gives O(n times k)." },
+      { id: "count", label: "Mentions the letter-count key for O(n · k)", max: 10, detect: ["\\b(26|letter counts?|character counts?|count of each letter|counts of letters)\\b"], tip: "Bonus: a tuple of 26 letter counts as the key gives O(n times k).", probe: "alt" },
       { id: "edge", label: "Edge cases (empty strings, single word)", max: 10, detect: ["\\b(empty|single|one word|duplicates?)\\b"], tip: "Mention an edge case, like an empty string or a single word." },
     ],
     say: "Anagrams have exactly the same letters, just rearranged. So if I sort each word's letters, all anagrams end up with the same sorted string: eat, tea and ate all become a-e-t. I use that as a key in a dictionary, a defaultdict of lists, and append each word to its key's list. At the end I return the dictionary's values. With n words of length up to k, sorting each word is k log k, so O(n times k log k) time and O(n times k) space. A faster key is a tuple of 26 letter counts, which gets it to O(n times k). An empty string is its own group.",
@@ -198,7 +203,7 @@ export const TECH: TechQuestion[] = [
       { id: "clarify", label: "Clarifies: unsorted input? do touching ranges merge?", max: 10, detect: ["\\b(touch|touching|share an? (end|endpoint)|sorted|unsorted|empty|in order)\\b"], tip: "Ask: is it sorted already, and do ranges that just touch, like 1-4 and 4-5, merge?" },
       { id: "sort", label: "Sorts by start time", max: 25, detect: ["\\b(sort|sorted|sorting)\\b", "\\b(start|starting|first)\\b"], tip: "Key step: sort the ranges by their start." },
       { id: "scan", label: "Compares each range with the last merged one", max: 25, detect: ["\\b(last|previous|end)\\b", "\\b(overlap|overlaps|overlapping|merge|extend)\\b"], tip: "Then scan: if a range starts before the last merged one ends, they overlap." },
-      { id: "max", label: "Extends with the max of the two ends", max: 10, detect: ["\\b(max|maximum|bigger|larger|further|later)\\b"], tip: "Say how you merge: the end becomes the max of both ends." },
+      { id: "max", label: "Extends with the max of the two ends", max: 10, detect: ["\\b(max|maximum|bigger|larger|further|later)\\b"], tip: "Say how you merge: the end becomes the max of both ends.", probe: "why" },
       { id: "complexity", label: "O(n log n) time", max: 20, detect: [NLOGN], tip: "Give the complexity: O(n log n) for the sort; the scan is O(n)." },
       { id: "edge", label: "Edge cases (empty, one range inside another)", max: 10, detect: ["\\b(empty|one interval|single|contained|inside|within)\\b"], tip: "Mention an edge case: one range completely inside another." },
     ],

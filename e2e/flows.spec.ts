@@ -388,7 +388,7 @@ test("top 10: interview pops up recommendations, grades by points, retry to 100"
   await page.locator("li", { hasText: "Two Sum" }).getByRole("button", { name: "Interview" }).click();
   await page.getByRole("button", { name: "Voice on" }).click(); // voice off so the test doesn't wait on speech
   await page.getByTestId("ask").click();
-  await expect(page.getByTestId("tech-ask")).toContainText("add up to the target");
+  await expect(page.getByTestId("conversation")).toContainText("add up to the target");
   await page.getByLabel("Your answer").fill("I'd use a dictionary to remember what I've seen.");
   await expect(page.getByTestId("live-checklist")).toContainText("Uses a hash map");
   await expect(page.getByTestId("toasts")).toContainText("+25");
@@ -400,6 +400,7 @@ test("top 10: interview pops up recommendations, grades by points, retry to 100"
   await expect(page.getByTestId("what-to-say")).toContainText("dictionary");
   await page.getByRole("button", { name: "Retry" }).click();
   await page.getByTestId("ask").click();
+  await expect(page.getByLabel("Your answer")).toBeVisible();
   await page.getByLabel("Your answer").fill(
     "Can numbers repeat? I'll assume yes. Brute force checks every pair, O(n squared). Instead I keep a dictionary from number to index and check if target minus the number is already there, checking before storing so a number can't pair with itself, which handles duplicates like 3 and 3. O(n) time and O(n) space.",
   );
@@ -430,6 +431,7 @@ test("top 10: uses Claude's grade when the grader answers", async ({ page }) => 
   await page.locator("li", { hasText: "Inner vs. outer join" }).getByRole("button", { name: "Interview" }).click();
   await page.getByRole("button", { name: "Voice on" }).click();
   await page.getByTestId("ask").click();
+  await expect(page.getByLabel("Your answer")).toBeVisible();
   await page.getByLabel("Your answer").fill("An inner join keeps matching rows, a left join keeps all rows.");
   await page.getByTestId("submit-answer").click();
   await expect(page.getByTestId("tech-result")).toContainText("graded by Claude");
@@ -448,8 +450,11 @@ test("top 10: a video before each question, final videos, and no-sound never lea
   await expect(watch.locator("iframe")).toHaveAttribute("src", /youtube-nocookie\.com\/embed\/KLlXCFG5TnA/);
   await watch.getByRole("checkbox", { name: /watched/ }).click();
   await expect(page.getByTestId("watch-first")).toContainText("· watched");
-  // Voice stays on: headless Chromium plays no audio, so the app must say so and still open the answer box.
+  // Voice stays on: the interviewer's lines can be skipped, and you always get your turn.
   await page.getByTestId("ask").click();
+  for (let i = 0; i < 2 && !(await page.getByLabel("Your answer").isVisible()); i++) {
+    await page.getByTestId("skip").click({ timeout: 5000 }).catch(() => {});
+  }
   await expect(page.getByLabel("Your answer")).toBeVisible({ timeout: 8000 });
 });
 
@@ -461,6 +466,39 @@ test("top 10: the interviewer plays a recorded clip, and the mic opens when it e
   expect(res.status()).toBe(200);
   expect(res.headers()["content-type"]).toContain("audio");
   await page.getByTestId("ask").click();
-  // either it plays and ends, or the browser blocks audio; both must open the answer box
+  await expect(page.getByTestId("conversation")).toContainText("thanks for coming in");
+  // skip the intro and the question, or let them play out; either way you get the floor
+  for (let i = 0; i < 2 && !(await page.getByLabel("Your answer").isVisible()); i++) {
+    await page.getByTestId("skip").click({ timeout: 5000 }).catch(() => {});
+  }
   await expect(page.getByLabel("Your answer")).toBeVisible({ timeout: 15000 });
+});
+
+test("top 10 simulator: the interviewer reacts to what you say, then follows up and wraps up", async ({ page }) => {
+  await skipIntro(page);
+  await page.goto("/technical");
+  await page.locator("li", { hasText: "Two Sum" }).getByRole("button", { name: "Interview" }).click();
+  await page.getByRole("button", { name: "Voice on" }).click();
+  await page.getByTestId("ask").click();
+  const box = page.getByLabel("Your answer");
+  const reply = async (text: string) => {
+    await expect(box).toBeVisible();
+    await box.fill(text);
+    await page.getByRole("button", { name: "Send reply" }).click();
+  };
+  const lines = page.getByTestId("interviewer-line");
+  await reply("I'd use a dictionary.");
+  await expect(lines.last()).toContainText("Keep going");
+  await reply("Brute force checks every pair, that's O(n squared). Instead I keep a dictionary from number to index and check if target minus the number is in it.");
+  await expect(lines.last()).toContainText("questions about the input");
+  await reply("Can numbers repeat? I'll assume yes, so duplicates like 3 and 3 should work.");
+  await expect(lines.last()).toContainText("walk me through");
+  await reply("For each number I check the dictionary before storing it, so a number never pairs with itself.");
+  await expect(lines.last()).toContainText("time and space complexity");
+  await reply("O(n) time and O(n) space.");
+  await expect(lines.last()).toContainText("One follow-up");
+  await reply("If it were sorted I'd use two pointers from both ends, O(1) space.");
+  await expect(lines.last()).toContainText("Let's see how you did");
+  await expect(page.getByTestId("tech-score")).toContainText("100", { timeout: 10000 });
+  await expect(page.getByTestId("tech-result")).toContainText("The conversation");
 });

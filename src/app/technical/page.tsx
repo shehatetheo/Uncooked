@@ -78,7 +78,7 @@ export default function TechnicalPage() {
         {view.stage === "ghost" ? (
           <TechGhost key={`g-${q.id}`} q={q} onNext={next ?? (() => setView({ ...view, stage: "interview" }))} nextLabel={next ? (last ? "Finish ghost run" : "Next question") : "Now the interview"} />
         ) : (
-          <TechInterview key={`i-${q.id}`} q={q} hints={hints} voice={voice} onNext={next} nextLabel={last ? "Finish interview" : "Next question"} />
+          <TechInterview key={`i-${q.id}`} q={q} hints={hints} voice={voice} opening={view.run && view.index > 0 ? "next" : "intro"} onNext={next} nextLabel={last ? "Finish interview" : "Next question"} />
         )}
       </div>
     );

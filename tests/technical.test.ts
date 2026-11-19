@@ -50,3 +50,25 @@ describe("technical interview videos", () => {
     expect(new Set(all.map((v) => v.id)).size).toBe(all.length);
   });
 });
+
+import { nextStep, probeOf } from "@/lib/simulator";
+
+describe("interview simulator", () => {
+  const q = TECH.find((x) => x.id === "t-two-sum")!;
+  const byId = (...ids: string[]) => q.rubric.filter((p) => ids.includes(p.id));
+  it("asks the candidate to keep going when they've barely spoken", () => {
+    expect(nextStep(q.rubric, [], 5, false)).toEqual({ kind: "probe", probe: "more" });
+  });
+  it("probes for missing points in a natural order, then follows up, then wraps", () => {
+    expect(nextStep(byId("brute", "complexity", "edge"), ["more"], 60, false)).toEqual({ kind: "probe", probe: "brute" });
+    expect(nextStep(byId("complexity", "edge"), ["more", "brute"], 80, false)).toEqual({ kind: "probe", probe: "complexity" });
+    expect(nextStep([], ["more"], 120, false)).toEqual({ kind: "follow" });
+    expect(nextStep([], [], 120, true)).toEqual({ kind: "wrap" });
+  });
+  it("stops probing after four questions", () => {
+    expect(nextStep(byId("edge"), ["brute", "core", "complexity", "why"], 200, false)).toEqual({ kind: "follow" });
+  });
+  it("gives every rubric point a probe the interviewer can ask", () => {
+    for (const t of TECH) for (const p of t.rubric) expect(["clarify", "brute", "core", "why", "alt", "example", "complexity", "edge"]).toContain(probeOf(p));
+  });
+});

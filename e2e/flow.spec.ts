@@ -4,6 +4,8 @@ type Body = { phase: string; event?: string; code: string; run: { passed: number
 
 /** Stand in for the AI: reply with a line that depends on the event, and record what the app sent. */
 async function mockAi(page: Page, sent: Body[] = []) {
+  // no server voice in tests: the app falls back to the browser's voice
+  await page.route("**/api/speak", (route) => route.fulfill({ status: 503, contentType: "application/json", body: "{}" }));
   await page.route("**/api/interview", async (route) => {
     const body = route.request().postDataJSON() as Body;
     sent.push(body);

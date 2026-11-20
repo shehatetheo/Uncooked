@@ -168,28 +168,44 @@ if (typeof window !== "undefined" && "speechSynthesis" in window) {
 }
 export const voiceName = () => bestVoice()?.name ?? null;
 
-/** Speaks streamed text sentence by sentence, so the voice starts before the reply is finished. */
+// A very short silent clip: playing it inside a tap lets later audio play without one.
+const SILENCE = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
+
+/**
+ * Speaks streamed text sentence by sentence, so the voice starts before the
+ * reply is finished. Each sentence is fetched as audio from /api/speak and
+ * played through an audio element. If the server can't make audio, it falls
+ * back to the browser's built-in voice.
+ */
 export class Speaker {
   muted = false;
   /** Called when speech starts and when everything queued has been said. */
   onChange: ((speaking: boolean) => void) | null = null;
   private buf = "";
+  private queue: { text: string; audio: Promise<string | null> }[] = [];
+  private playing = false;
+  private generation = 0;
+  private el: HTMLAudioElement | null = null;
+  private serverVoice = true;
   private pending = new Set<SpeechSynthesisUtterance>();
-  private streaming = false;
   private wasSpeaking = false;
 
-  /** Call from a tap: iOS only allows speech that a user gesture started. */
+  /** Call from a tap: browsers only allow sound that a user gesture started. */
   unlock() {
-    if (!canSpeak()) return;
-    const u = new SpeechSynthesisUtterance(" ");
-    u.volume = 0;
-    window.speechSynthesis.speak(u);
+    if (typeof Audio !== "undefined") {
+      this.el ??= new Audio();
+      this.el.src = SILENCE;
+      void this.el.play().catch(() => {});
+    }
+    if (canSpeak()) {
+      const u = new SpeechSynthesisUtterance(" ");
+      u.volume = 0;
+      window.speechSynthesis.speak(u);
+    }
   }
 
   begin() {
-    // Safari can drop an utterance spoken right after cancel(), so only cancel when something is playing.
-    if (this.pending.size || (canSpeak() && (window.speechSynthesis.speaking || window.speechSynthesis.pending))) this.cancel();
-    this.streaming = true;
+    this.cancel();
   }
 
   feed(chunk: string) {
@@ -201,49 +217,106 @@ export class Speaker {
   }
 
   end() {
-    this.streaming = false;
     if (this.buf.trim()) this.say(this.buf);
     this.buf = "";
     this.notify();
   }
 
   get speaking() {
-    return this.pending.size > 0;
+    return this.playing || this.queue.length > 0 || this.pending.size > 0;
   }
 
   cancel() {
+    this.generation++;
     this.buf = "";
-    this.streaming = false;
+    this.queue = [];
+    this.playing = false;
     this.pending.clear();
+    this.el?.pause();
     if (canSpeak()) window.speechSynthesis.cancel();
     this.notify();
   }
 
   private say(text: string) {
-    if (this.muted || !canSpeak() || !text.trim()) return;
-    const u = new SpeechSynthesisUtterance(text.trim());
-    u.lang = "en-US";
-    u.rate = 1.04;
-    const voice = bestVoice();
-    if (voice) u.voice = voice;
-    const done = () => {
-      this.pending.delete(u);
-      this.notify();
-    };
-    u.onend = done;
-    u.onerror = done;
-    this.pending.add(u);
-    if (window.speechSynthesis.paused) window.speechSynthesis.resume();
-    window.speechSynthesis.speak(u);
+    const clean = text.trim();
+    if (this.muted || !clean) return;
+    // start fetching right away so sentences are ready back to back
+    this.queue.push({ text: clean, audio: this.serverVoice ? this.fetchAudio(clean) : Promise.resolve(null) });
     this.notify();
+    if (!this.playing) void this.pump();
+  }
+
+  private async fetchAudio(text: string): Promise<string | null> {
+    try {
+      const res = await fetch("/api/speak", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text }) });
+      if (!res.ok) throw new Error(String(res.status));
+      return URL.createObjectURL(await res.blob());
+    } catch {
+      this.serverVoice = false; // don't keep asking; use the browser's voice from here on
+      return null;
+    }
+  }
+
+  private async pump() {
+    const gen = this.generation;
+    this.playing = true;
+    while (this.queue.length && gen === this.generation) {
+      const item = this.queue.shift()!;
+      const url = await item.audio;
+      if (gen !== this.generation) return;
+      if (url) await this.playUrl(url);
+      else await this.speakWithBrowser(item.text);
+    }
+    if (gen === this.generation) {
+      this.playing = false;
+      this.notify();
+    }
+  }
+
+  private playUrl(url: string): Promise<void> {
+    return new Promise((resolve) => {
+      const el = (this.el ??= new Audio());
+      const done = () => {
+        el.onended = el.onerror = el.onpause = null;
+        URL.revokeObjectURL(url);
+        resolve();
+      };
+      el.onended = done;
+      el.onerror = done;
+      el.onpause = done; // cancel() pauses
+      el.src = url;
+      el.play().catch(done);
+    });
+  }
+
+  private speakWithBrowser(text: string): Promise<void> {
+    return new Promise((resolve) => {
+      if (!canSpeak()) return resolve();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "en-US";
+      u.rate = 1.04;
+      const voice = bestVoice();
+      if (voice) u.voice = voice;
+      const done = () => {
+        this.pending.delete(u);
+        resolve();
+      };
+      u.onend = done;
+      u.onerror = done;
+      this.pending.add(u);
+      if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+      window.speechSynthesis.speak(u);
+      // a silent browser voice never reports the end: don't let it hold up the conversation
+      setTimeout(done, Math.max(4000, text.length * 90));
+    });
   }
 
   private notify() {
-    const now = this.pending.size > 0 || (this.streaming && !this.muted);
+    const now = this.speaking;
     if (now !== this.wasSpeaking) {
       this.wasSpeaking = now;
-      this.onChange?.(this.pending.size > 0);
-    } else if (!now) this.onChange?.(false);
+      this.onChange?.(now);
+    }
   }
 }
 

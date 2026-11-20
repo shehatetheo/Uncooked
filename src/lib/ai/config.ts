@@ -22,3 +22,11 @@ export const FALLBACK_MODELS = ["nvidia/nemotron-3.5-lightning-free", "recursive
 
 /** Spoken replies are short, so they don't need much thinking. Keeps the reply fast. */
 export const REASONING = "low" as const;
+
+/**
+ * The interviewer's voice. Audio is made on the server and played like any
+ * sound file, because some browsers' built-in voices are silent. If this
+ * fails, the app falls back to the browser's voice.
+ */
+export const SPEECH_MODEL = "openai/tts-1";
+export const SPEECH_VOICE = "echo";

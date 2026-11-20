@@ -1,172 +1,70 @@
-import { defineProblem } from "@/lib/content/types";
+import { python } from "@/lib/types";
 
-// 100 pairs: "ab"/"ba", "aab"/"baa", "aaab"/"baaa", ... Each pair is its own group.
-const pairs = Array.from({ length: 100 }, (_, k) => ["a".repeat(k + 1) + "b", "b" + "a".repeat(k + 1)]);
-
-export default defineProblem({
+export default python({
   id: "group-anagrams",
   title: "Group Anagrams",
-  difficulty: "medium",
-  pattern: "hash-map",
-  tags: ["core", "string", "sorting"],
-  statement: `You get a list of words. Sort them into groups so that every word in a group is an anagram of the others: same letters, same counts, different order.
+  difficulty: "Medium",
+  tags: ["string", "hash map"],
+  statement: `You get a list of words. Two words are anagrams if they use exactly the same letters the same number of times, just in a different order.
 
-Return the groups as a list of lists. A word with no anagram partner gets a group of its own, and repeated words all stay in the output.
+Put the words into groups so that each group holds words that are anagrams of each other. A word with no anagram partner gets a group of its own.
 
-The order of the groups, and of the words inside a group, doesn't matter.`,
+Return the list of groups. The groups can be in any order, and so can the words inside each group.`,
   examples: [
     {
       input: 'strs = ["eat", "tea", "tan", "ate", "nat", "bat"]',
       output: '[["eat", "tea", "ate"], ["tan", "nat"], ["bat"]]',
-      note: '"bat" has no partner, so it stands alone',
+      note: "eat, tea and ate all use one a, one e and one t.",
     },
-    { input: 'strs = [""]', output: '[[""]]', note: "the empty string is a word too" },
+    { input: 'strs = [""]', output: '[[""]]', note: "The empty word still forms a group." },
   ],
-  constraints: ["0 ≤ len(strs) ≤ 10⁴", "0 ≤ len(strs[i]) ≤ 100", "Lowercase English letters only"],
-  brief: {
-    what: "You're given a list of words. Put them into groups where every word in a group uses exactly the same letters the same number of times, just in a different order, and return the groups as a list of lists.",
-    example: "From [\"eat\", \"tea\", \"tan\", \"ate\", \"nat\", \"bat\"], eat, tea and ate share the same letters, tan and nat share theirs, and bat matches nothing, so the result is [[\"eat\", \"tea\", \"ate\"], [\"tan\", \"nat\"], [\"bat\"]].",
-    watch: "A word with no partner still gets its own group, repeated words all stay in the output, the empty string counts as a word, and the order of groups and of words inside them doesn't matter.",
-  },
-  myWords: 'Sort each word\'s letters ("eat" → "aet") and use that as a hash map key. Same key, same group.',
-  time: "O(n·k log k)",
-  space: "O(n·k)",
-  understand: [
-    {
-      prompt: "What is it actually asking?",
-      choices: [
-        "Take list[str], return True if all the words are anagrams of each other",
-        "Take list[str], return the largest group of anagrams",
-        "Take list[str], return each word with its letters sorted",
-        "Take list[str], return the words split into groups of anagrams",
-      ],
-      answer: 3,
-      explain:
-        "Input is list[str]. Output is list[list[str]]: every input word lands in exactly one group, and neither the group order nor the order inside a group matters.",
-    },
-    {
-      prompt: "Which pattern and approach?",
-      choices: [
-        "Hash map keyed by each word's sorted letters",
-        "Sort the whole list alphabetically, then scan neighbours",
-        "Compare every pair of words with an anagram check",
-        "Two pointers moving in from both ends of the list",
-      ],
-      answer: 0,
-      explain:
-        "Anagrams turn into the same string once their letters are sorted, so that string works as a dict key. Sorting the list itself doesn't put anagrams next to each other, and pairwise checks are O(n²·k).",
-    },
-    {
-      prompt: "What's the optimal time and space complexity?",
-      choices: [
-        "O(n·k) time, O(1) space",
-        "O(n²·k) time, O(n) space",
-        "O(n·k log k) time, O(n·k) space",
-        "O(n log n) time, O(n) space",
-      ],
-      answer: 2,
-      explain:
-        "For n words of length up to k, sorting each word costs O(k log k), so O(n·k log k) overall. The map stores every word once: O(n·k) space. A letter-count key trims the time to O(n·k), but the space stays the same.",
-    },
-  ],
+  constraints: ["1 ≤ len(strs) ≤ 10⁴", "0 ≤ len(strs[i]) ≤ 100", "Words contain only lowercase English letters"],
+  signature: "def groupAnagrams(self, strs: List[str]) -> List[List[str]]:",
   method: "groupAnagrams",
   params: [{ name: "strs" }],
   compare: "groups",
-  solution: `def groupAnagrams(self, strs):
-    g = defaultdict(list)
-    for w in strs: g["".join(sorted(w))].append(w)
-    return list(g.values())`,
-  captions: [
-    { label: "INIT", text: "Hash map of sorted letters → words. A missing key starts out as an empty list." },
-    { label: "GROUP", text: "For each word, sort its letters into a key and append the word to that key's list." },
-    { label: "RETURN", text: "The map's values are the finished groups." },
+  solution: [
+    "groups = defaultdict(list)",
+    "for word in strs:",
+    "    count = [0] * 26",
+    "    for c in word:",
+    '        count[ord(c) - ord("a")] += 1',
+    "    groups[tuple(count)].append(word)",
+    "return list(groups.values())",
   ],
-  visual: [
-    { line: 0, note: "g starts empty", arrays: [{ name: "strs", values: ["eat", "tea", "tan", "ate", "nat", "bat"] }], map: { name: "g", entries: [] } },
-    {
-      line: 1,
-      note: 'w = "eat" sorts to "aet": new key',
-      arrays: [{ name: "strs", values: ["eat", "tea", "tan", "ate", "nat", "bat"], pointers: { w: 0 } }],
-      map: { name: "g", entries: [["aet", "eat"]] },
-      vars: { key: "aet" },
-    },
-    {
-      line: 1,
-      note: 'w = "tea" also sorts to "aet": same group',
-      arrays: [{ name: "strs", values: ["eat", "tea", "tan", "ate", "nat", "bat"], pointers: { w: 1 } }],
-      map: { name: "g", entries: [["aet", "eat, tea"]] },
-      vars: { key: "aet" },
-    },
-    {
-      line: 1,
-      note: 'w = "tan" sorts to "ant": new key',
-      arrays: [{ name: "strs", values: ["eat", "tea", "tan", "ate", "nat", "bat"], pointers: { w: 2 } }],
-      map: { name: "g", entries: [["aet", "eat, tea"], ["ant", "tan"]] },
-      vars: { key: "ant" },
-    },
-    {
-      line: 1,
-      note: '"ate" joins "aet", then "nat" joins "ant"',
-      arrays: [{ name: "strs", values: ["eat", "tea", "tan", "ate", "nat", "bat"], pointers: { w: 4 } }],
-      map: { name: "g", entries: [["aet", "eat, tea, ate"], ["ant", "tan, nat"]] },
-      vars: { key: "ant" },
-    },
-    {
-      line: 1,
-      note: 'w = "bat" sorts to "abt": a group of one',
-      arrays: [{ name: "strs", values: ["eat", "tea", "tan", "ate", "nat", "bat"], pointers: { w: 5 } }],
-      map: { name: "g", entries: [["aet", "eat, tea, ate"], ["ant", "tan, nat"], ["abt", "bat"]] },
-      vars: { key: "abt" },
-    },
-    {
-      line: 2,
-      note: "Drop the keys, keep the lists",
-      map: { name: "g", entries: [["aet", "eat, tea, ate"], ["ant", "tan, nat"], ["abt", "bat"]] },
-      vars: { return: "[[eat, tea, ate], [tan, nat], [bat]]" },
-    },
+  captions: [
+    "A dictionary from a letter fingerprint to the words that have it.",
+    "Handle each word once.",
+    "The fingerprint is 26 counters, one for each letter a to z.",
+    "Look at every letter in the word.",
+    "Add one to that letter's counter. Anagrams end up with identical counters.",
+    "A list can't be a dictionary key, so turn the counters into a tuple and file the word under it.",
+    "Each dictionary value is one finished group.",
   ],
   tests: {
     visible: [
       { args: [["eat", "tea", "tan", "ate", "nat", "bat"]], expected: [["eat", "tea", "ate"], ["tan", "nat"], ["bat"]] },
-      { args: [[""]], expected: [[""]], label: "one empty string" },
-      { args: [["a"]], expected: [["a"]], label: "single word" },
+      { args: [[""]], expected: [[""]] },
+      { args: [["a"]], expected: [["a"]] },
     ],
     hidden: [
-      { args: [[]], expected: [], label: "empty list" },
-      { args: [["ab", "ba", "ab"]], expected: [["ab", "ba", "ab"]], label: "duplicate words stay" },
-      { args: [["abc", "def", "ghi"]], expected: [["abc"], ["def"], ["ghi"]], label: "no anagrams at all" },
-      { args: [["aab", "aba", "baa", "abb", "bab", "bba"]], expected: [["aab", "aba", "baa"], ["abb", "bab", "bba"]], label: "same letters, different counts" },
-      { args: [["ab", "a", "", "ba", "b", ""]], expected: [["ab", "ba"], ["a"], ["", ""], ["b"]], label: "mixed lengths and empties" },
-      { args: [pairs.flat()], expected: pairs, label: "200 words, 100 groups" },
+      { args: [["abc", "def", "ghi"]], expected: [["abc"], ["def"], ["ghi"]] },
+      { args: [["ab", "ba", "ab"]], expected: [["ab", "ba", "ab"]] },
+      { args: [["", ""]], expected: [["", ""]] },
+      { args: [["aab", "aba", "baa", "abb", "bab"]], expected: [["aab", "aba", "baa"], ["abb", "bab"]] },
+      { args: [["listen", "silent", "enlist", "google", "gogole", "cat"]], expected: [["listen", "silent", "enlist"], ["google", "gogole"], ["cat"]] },
     ],
   },
   hints: [
-    "Two words are anagrams when something about them is identical. What could you compute from a word that comes out the same for every one of its anagrams?",
-    'Sorting the letters of "eat", "tea" and "ate" gives "aet" each time. That can be a dictionary key.',
-    "A defaultdict(list) lets you append without checking whether the key exists yet. The answer is the dict's values.",
+    "What is something you could compute from a word that comes out identical for every one of its anagrams?",
+    "Sorted letters or letter counts both work as a fingerprint. Which data structure collects words that share a fingerprint?",
+    "Count the 26 letters of each word, use that count as a dictionary key, and append the word to the list stored under its key.",
   ],
   followUps: [
-    {
-      q: "What's the brute force and why is yours better?",
-      a: "Compare each word against every existing group with an anagram check: O(n²·k). The sorted key finds the right group with one hash lookup.",
-    },
-    {
-      q: "Can you avoid sorting each word?",
-      a: "Yes. Count the letters into a list of 26 ints and use tuple(counts) as the key. That is O(n·k) time instead of O(n·k log k).",
-    },
-    {
-      q: "Why join the sorted letters instead of using them directly as the key?",
-      a: "sorted() returns a list, and lists aren't hashable. Joining into a string, or wrapping in tuple(), gives you a key a dict accepts.",
-    },
+    "Using the sorted word as the key is shorter to write. How does its running time compare with counting letters?",
+    "What would you change if the words could contain any Unicode characters instead of only a to z?",
   ],
-  edgeCases: [
-    { input: 'strs = [""]', breaks: true, why: "The empty string sorts to an empty key and still needs a group. Code that skips falsy words or reads word[0] drops it or crashes." },
-    { input: 'strs = ["ab", "ba", "ab"]', breaks: true, why: 'Collecting groups in sets loses the second "ab". Every input word has to appear in the output.' },
-    { input: 'strs = ["aab", "abb"]', breaks: true, why: "Keying on set(word) puts them together. They share letters but not counts." },
-    { input: 'strs = ["abc", "def"]', breaks: false, why: "No anagrams, so each word gets its own key and its own group." },
-  ],
-  links: {
-    leetcode: "https://leetcode.com/problems/group-anagrams/",
-    neetcode: "https://www.youtube.com/watch?v=vzdNOK2oB2E",
-  },
+  time: "O(n · k)",
+  space: "O(n · k)",
+  link: "https://leetcode.com/problems/group-anagrams/",
 });

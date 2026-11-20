@@ -1,342 +1,212 @@
 @import "tailwindcss";
-@import "@fontsource/silkscreen/400.css";
-@import "@fontsource/silkscreen/700.css";
-@import "@fontsource-variable/jetbrains-mono/index.css";
+@import "@fontsource-variable/jetbrains-mono";
 
-/* ── Design tokens. Every colour, font and radius in the app comes from here. ── */
 @theme {
   --color-*: initial;
-  --color-bg: #060a13; /* near-black space blue */
-  --color-raised: #0b111e; /* panels */
-  --color-inset: #04070d; /* editors, terminals */
-  --color-line: #1b2740; /* pixel borders */
-  --color-line-strong: #33466e;
-  --color-text: #e8e4d8; /* off-white */
-  --color-dim: #8a93a8; /* secondary text */
-  --color-ghost: #48516a; /* ghost code */
-  --color-accent: #3ddc84; /* terminal green: success, progress */
-  --color-accent-dim: #17633b;
-  --color-error: #ff5d5d; /* errors only */
-  --color-second: #f0b849; /* the one secondary accent: due, timers */
+  --color-bg: #0e1014;
+  --color-panel: #15181e;
+  --color-inset: #0b0d10;
+  --color-hover: #1c2028;
+  --color-line: #252a33;
+  --color-line-strong: #353c48;
+  --color-text: #e7e9ee;
+  --color-dim: #9aa3b2;
+  --color-faint: #5f6877;
+  /* the one accent */
+  --color-accent: #f0b44c;
+  --color-accent-soft: #f0b44c1f;
+  --color-accent-ink: #1a1305;
+  /* test status only */
+  --color-ok: #5cc48d;
+  --color-bad: #f07272;
+  --color-transparent: transparent;
 
-  --font-*: initial;
-  --font-pixel: "Silkscreen", ui-monospace, monospace;
-  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
-
-  --radius-*: initial;
-  --shadow-*: initial;
-  --spacing: 4px;
-
-  --text-2xs: 10px;
-  --text-xs: 12px;
-  --text-sm: 13px;
-  --text-base: 15px;
-  --text-lg: 18px;
-  --text-xl: 24px;
-  --text-2xl: 32px;
-
-  --breakpoint-md: 768px;
-  --breakpoint-lg: 1100px;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-:root {
-  --px: 2px; /* size of one "pixel" in borders */
-  color-scheme: dark;
+html,
+body {
+  height: 100%;
 }
-
-@layer base {
-  html {
-    background: var(--color-bg);
-    -webkit-text-size-adjust: 100%;
-  }
-  body {
-    margin: 0;
-    min-height: 100dvh;
-    background: var(--color-bg);
-    color: var(--color-text);
-    font-family: var(--font-mono);
-    font-size: var(--text-base);
-    line-height: 1.55;
-    -webkit-font-smoothing: antialiased;
-    -webkit-tap-highlight-color: transparent;
-  }
-  ::selection {
-    background: var(--color-accent-dim);
-    color: var(--color-text);
-  }
-  a {
-    color: inherit;
-    text-decoration: none;
-  }
-  button {
-    font: inherit;
-    color: inherit;
-    cursor: pointer;
-  }
-  :focus-visible {
-    outline: var(--px) solid var(--color-second);
-    outline-offset: var(--px);
-  }
-  * {
-    scrollbar-color: var(--color-line-strong) transparent;
-    scrollbar-width: thin;
-  }
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+button,
+a,
+select,
+summary {
+  -webkit-tap-highlight-color: transparent;
+}
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 @layer components {
-  /* Stepped pixel corners: four offset shadows leave the corner pixel empty. */
-  .panel {
-    position: relative;
-    background: var(--color-raised);
-    margin: var(--px);
-    box-shadow:
-      0 calc(var(--px) * -1) 0 0 var(--color-line),
-      0 var(--px) 0 0 var(--color-line),
-      calc(var(--px) * -1) 0 0 0 var(--color-line),
-      var(--px) 0 0 0 var(--color-line);
-  }
-  .panel-inset {
-    background: var(--color-inset);
-  }
-  .panel-accent {
-    box-shadow:
-      0 calc(var(--px) * -1) 0 0 var(--color-accent-dim),
-      0 var(--px) 0 0 var(--color-accent-dim),
-      calc(var(--px) * -1) 0 0 0 var(--color-accent-dim),
-      var(--px) 0 0 0 var(--color-accent-dim);
-  }
-
-  .label {
-    font-family: var(--font-pixel);
-    font-size: var(--text-2xs);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--color-dim);
-  }
-  .h1 {
-    font-family: var(--font-pixel);
-    font-size: var(--text-xl);
-    line-height: 1.2;
-    letter-spacing: 0.02em;
-  }
-  .h2 {
-    font-family: var(--font-pixel);
-    font-size: var(--text-base);
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
-
   .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    min-height: 36px;
-    padding: 0 12px;
-    margin: var(--px);
-    font-family: var(--font-pixel);
-    font-size: var(--text-xs);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    white-space: nowrap;
-    background: var(--color-raised);
+    gap: 0.4rem;
+    height: 2.25rem;
+    padding: 0 0.9rem;
+    border: 1px solid var(--color-line-strong);
+    border-radius: 0.5rem;
+    background: var(--color-panel);
     color: var(--color-text);
-    border: 0;
-    box-shadow:
-      0 calc(var(--px) * -1) 0 0 var(--color-line-strong),
-      0 var(--px) 0 0 var(--color-line-strong),
-      calc(var(--px) * -1) 0 0 0 var(--color-line-strong),
-      var(--px) 0 0 0 var(--color-line-strong);
-    transition: background-color 80ms linear, color 80ms linear;
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.12s, border-color 0.12s;
   }
   .btn:hover:not(:disabled) {
-    background: var(--color-line);
-  }
-  .btn:active:not(:disabled) {
-    transform: translateY(var(--px));
+    background: var(--color-hover);
   }
   .btn:disabled {
-    color: var(--color-ghost);
+    opacity: 0.45;
     cursor: not-allowed;
   }
   .btn-primary {
     background: var(--color-accent);
-    color: var(--color-bg);
-    box-shadow:
-      0 calc(var(--px) * -1) 0 0 var(--color-accent),
-      0 var(--px) 0 0 var(--color-accent),
-      calc(var(--px) * -1) 0 0 0 var(--color-accent),
-      var(--px) 0 0 0 var(--color-accent);
+    border-color: var(--color-accent);
+    color: var(--color-accent-ink);
+    font-weight: 600;
   }
   .btn-primary:hover:not(:disabled) {
-    background: var(--color-text);
-    box-shadow:
-      0 calc(var(--px) * -1) 0 0 var(--color-text),
-      0 var(--px) 0 0 var(--color-text),
-      calc(var(--px) * -1) 0 0 0 var(--color-text),
-      var(--px) 0 0 0 var(--color-text);
+    background: #f5c26a;
   }
-  .btn-sm {
-    min-height: 28px;
-    padding: 0 8px;
-    font-size: var(--text-2xs);
+  .btn-quiet {
+    border-color: transparent;
+    background: transparent;
+    color: var(--color-dim);
   }
-  .btn[aria-pressed="true"] {
+  .btn-quiet:hover:not(:disabled) {
+    color: var(--color-text);
+  }
+  .panel {
+    background: var(--color-panel);
+    border: 1px solid var(--color-line);
+    border-radius: 0.75rem;
+  }
+  .tab {
+    position: relative;
+    height: 2.75rem;
+    padding: 0 0.85rem;
+    color: var(--color-dim);
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .tab:hover {
+    color: var(--color-text);
+  }
+  .tab[aria-selected="true"] {
     color: var(--color-accent);
-    background: var(--color-inset);
   }
-
-  .chip {
+  .tab[aria-selected="true"]::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    background: var(--color-accent);
+  }
+  .pill {
     display: inline-flex;
     align-items: center;
-    padding: 0 8px;
-    min-height: 20px;
-    font-family: var(--font-pixel);
-    font-size: var(--text-2xs);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    height: 1.5rem;
+    padding: 0 0.55rem;
+    border: 1px solid var(--color-line-strong);
+    border-radius: 999px;
     color: var(--color-dim);
-    background: var(--color-inset);
-    box-shadow: inset 0 0 0 1px var(--color-line);
+    font-size: 0.75rem;
+    white-space: nowrap;
   }
-
-  .choice {
-    display: flex;
-    gap: 12px;
-    width: 100%;
-    padding: 12px;
-    margin: var(--px);
-    text-align: left;
-    background: var(--color-inset);
-    border: 0;
-    box-shadow:
-      0 calc(var(--px) * -1) 0 0 var(--color-line),
-      0 var(--px) 0 0 var(--color-line),
-      calc(var(--px) * -1) 0 0 0 var(--color-line),
-      var(--px) 0 0 0 var(--color-line);
-    width: calc(100% - var(--px) * 2);
+  .label {
+    color: var(--color-faint);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
-  .choice:hover:not(:disabled) {
-    background: var(--color-raised);
-  }
-  .choice[data-state="right"] {
-    color: var(--color-accent);
-    box-shadow:
-      0 calc(var(--px) * -1) 0 0 var(--color-accent),
-      0 var(--px) 0 0 var(--color-accent),
-      calc(var(--px) * -1) 0 0 0 var(--color-accent),
-      var(--px) 0 0 0 var(--color-accent);
-  }
-  .choice[data-state="wrong"] {
-    color: var(--color-error);
-    box-shadow:
-      0 calc(var(--px) * -1) 0 0 var(--color-error),
-      0 var(--px) 0 0 var(--color-error),
-      calc(var(--px) * -1) 0 0 0 var(--color-error),
-      var(--px) 0 0 0 var(--color-error);
-  }
-
   .field {
     width: 100%;
-    padding: 12px;
+    border: 1px solid var(--color-line-strong);
+    border-radius: 0.5rem;
     background: var(--color-inset);
     color: var(--color-text);
-    font: inherit;
-    font-size: 16px; /* 16px stops iOS from zooming on focus */
-    border: 0;
-    resize: vertical;
-    box-shadow: inset 0 0 0 var(--px) var(--color-line);
+    padding: 0.5rem 0.7rem;
+    font-size: 16px; /* stops iOS zooming on focus */
   }
-  .field:focus {
-    outline: none;
-    box-shadow: inset 0 0 0 var(--px) var(--color-line-strong);
+  .field::placeholder {
+    color: var(--color-faint);
   }
-
-  .prose p + p {
-    margin-top: 12px;
-  }
-  .kbd {
-    display: inline-block;
-    padding: 0 4px;
-    font-size: var(--text-xs);
-    color: var(--color-dim);
-    box-shadow: inset 0 0 0 1px var(--color-line-strong);
+  .codeblock {
+    background: var(--color-inset);
+    border: 1px solid var(--color-line);
+    border-radius: 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    overflow-x: auto;
   }
 }
 
-/* Ghost editor */
-@keyframes cursor-blink {
-  0%, 49% { background: var(--color-accent); color: var(--color-bg); }
-  50%, 100% { background: transparent; color: var(--color-ghost); box-shadow: inset 0 -2px 0 0 var(--color-accent); }
+/* interviewer status */
+@keyframes bar {
+  0%, 100% { transform: scaleY(0.35); }
+  50% { transform: scaleY(1); }
 }
-@keyframes wrong-flash {
-  0% { background: var(--color-error); color: var(--color-bg); }
-  100% { background: transparent; }
-}
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-.ghost-cursor {
+.bars span {
+  display: inline-block;
+  width: 3px;
+  height: 14px;
+  margin-right: 2px;
+  border-radius: 2px;
   background: var(--color-accent);
-  color: var(--color-bg);
-  animation: cursor-blink 1s steps(1) infinite;
+  transform-origin: center;
+  animation: bar 0.9s ease-in-out infinite;
 }
-.ghost-wrong {
-  animation: wrong-flash 320ms linear;
-  color: var(--color-error);
+.bars span:nth-child(2) { animation-delay: 0.15s; }
+.bars span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes pulse-dot {
+  50% { opacity: 0.3; }
 }
-.fade-in {
-  animation: fade-in 160ms linear;
+.pulse { animation: pulse-dot 1.1s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .bars span, .pulse { animation: none; }
 }
 
-/* CodeMirror, themed from tokens */
+/* CodeMirror */
 .cm-editor {
   height: 100%;
   background: var(--color-inset);
   color: var(--color-text);
-  font-size: 14px;
+  font-size: 13.5px;
 }
-.cm-editor.cm-focused {
-  outline: none;
-}
-.cm-editor .cm-scroller {
-  font-family: var(--font-mono);
-  line-height: 1.6;
-}
-.cm-editor .cm-content {
-  padding: 12px 0;
-  caret-color: var(--color-accent);
-}
-.cm-editor .cm-gutters {
-  background: var(--color-inset);
-  color: var(--color-ghost);
-  border-right: 1px solid var(--color-line);
-}
-.cm-editor .cm-activeLine,
-.cm-editor .cm-activeLineGutter {
-  background: var(--color-raised);
-}
-.cm-editor .cm-cursor {
-  border-left: 2px solid var(--color-accent);
-}
-.cm-editor .cm-selectionBackground,
-.cm-editor.cm-focused .cm-selectionBackground {
-  background: var(--color-accent-dim) !important;
-}
-@media (max-width: 767px) {
-  .cm-editor { font-size: 16px; }
+.cm-editor.cm-focused { outline: none; }
+.cm-editor .cm-scroller { font-family: var(--font-mono); line-height: 1.65; }
+.cm-editor .cm-content { padding: 12px 0; caret-color: var(--color-accent); }
+.cm-editor .cm-gutters { background: var(--color-inset); color: var(--color-faint); border-right: 1px solid var(--color-line); }
+.cm-editor .cm-activeLine, .cm-editor .cm-activeLineGutter { background: #ffffff08; }
+.cm-editor .cm-cursor { border-left: 2px solid var(--color-accent); }
+.cm-editor .cm-selectionBackground, .cm-editor.cm-focused .cm-selectionBackground { background: #f0b44c33 !important; }
+@media (max-width: 1023px) {
+  .cm-editor { font-size: 16px; } /* stops iOS zooming on focus */
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 1ms !important;
-    transition-duration: 1ms !important;
-  }
-  .ghost-cursor { animation: none; }
-}
-
-/* the live-call dot */
-@keyframes call-pulse { 50% { opacity: 0.25; } }
-.pulse { animation: call-pulse 1.2s steps(2, jump-none) infinite; }
-@media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+.prose-problem p + p { margin-top: 0.8rem; }

@@ -1,16 +1,28 @@
 {
   "name": "Uncooked",
   "short_name": "Uncooked",
-  "description": "Learn it, type the ghost, solve it cold. A technical interview trainer.",
+  "description": "Mock coding interviews with an AI interviewer, on SAP-reported questions.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#060a13",
-  "theme_color": "#060a13",
+  "background_color": "#0e1014",
+  "theme_color": "#0e1014",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }

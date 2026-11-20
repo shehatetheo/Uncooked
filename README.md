@@ -1,71 +1,53 @@
 # Uncooked
 
-Learn it, type the ghost, solve it cold. A technical interview trainer built for the
-SAP STAR super day (Fri Nov 20, 2026): coding, SQL, CS fundamentals, resume defense and
-behavioral prep, in one app that works on a phone.
+Mock coding interviews with an AI interviewer, on SAP-reported LeetCode questions. Python (and one SQL problem) runs in the browser.
 
-## Run it
+## How it works
+
+Each question goes through four phases:
+
+1. **Talk** – the interviewer gives the problem out loud; you restate it and explain your approach. No code yet.
+2. **Ghost** – you type the solution with the reference shown faintly, one captioned line at a time. Done when your code passes every test, however you wrote it.
+3. **Blind** – the reference is hidden and the editor is reset. You solve it alone while the interviewer interviews you.
+4. **Feedback** – a scorecard: five areas scored 1–5 with one tip each, and a hire / lean hire / lean no call.
+
+## The AI interviewer
+
+- Vercel AI SDK through Vercel AI Gateway, authenticated with the project's OIDC token. **There is no API key.** Don't add an `AI_GATEWAY_API_KEY` variable: a key would override OIDC.
+- The model is one constant: `INTERVIEWER_MODEL` in `src/lib/ai/config.ts`. The fallbacks next to it are tried if it is rate limited.
+- The interviewer's instructions are in `src/lib/ai/prompt.ts`.
+- If the gateway fails, the app says why and everything except the interviewer keeps working.
+
+Local development needs the OIDC token:
 
 ```bash
-npm install
+vercel link
+```
+
+```bash
+vercel env pull
 ```
 
 ```bash
 npm run dev
 ```
 
-Open http://localhost:3000. `npm run dev` and `npm run build` first copy the Python and
-SQL runtimes into `public/` and regenerate the content index.
+## Problems
+
+One typed file per problem in `content/problems/`, listed in order in `content/index.ts`. Fields are documented in `src/lib/types.ts`.
 
 ## Checks
+
+```bash
+npm run check
+```
+
+runs every reference solution against every visible and hidden test, with the same Python harness the browser uses.
 
 ```bash
 npm test
 ```
 
-Runs every reference solution against every visible and hidden test in real Pyodide,
-every SQL reference query against every dataset, and the logic tests (ghost-typing
-scoring, spaced repetition, output comparison). A broken solution or a bad test fails here.
-
 ```bash
 npm run build && npm run e2e
 ```
-
-Playwright flows at desktop and iPhone viewport sizes. CI runs all of the above.
-
-## How it works
-
-- **Four phases per problem:** Understand (3 questions) → Ghost type (3 reps with the
-  shadow, 3 from memory, optional rest between) → Cold solve (Run / Submit, hints,
-  Solution panel) → Explain it (out loud, checked, self-rated).
-- **Mastered** needs a hint-free cold solve on two different days. The rating button
-  alone can't grant it.
-- **Python** runs in the browser with Pyodide in a Web Worker (`public/py-worker.mjs`).
-  A run that exceeds 6 seconds is killed by terminating the worker.
-- **SQL** runs in the browser with sql.js. Your rows are compared with the reference
-  query's rows on the visible dataset and on hidden ones.
-- **Progress** is stored on the device in IndexedDB. Settings → Export / Import moves it
-  between devices. Every row carries a `userId` so a sync backend can be added later.
-- **Offline:** `public/sw.js` caches the app shell, every route, and the runtimes after
-  first use. Installable as a PWA.
-
-## Content is data
-
-Adding a problem means adding one file. The index is generated; schemas are validated
-at build time and invalid content fails the build.
-
-| What | Where | Schema |
-|---|---|---|
-| Coding problem | `content/problems/<id>.ts` | `Problem` in `src/lib/content/types.ts` |
-| SQL problem | `content/sql/<id>.ts` | `SqlProblem` |
-| Quiz questions | `content/quiz/<topic>.ts` | `QuizQuestion` |
-| Resume / behavioral / SAP / SQL-concept cards | `content/cards/<name>.ts` | `OpenCard` |
-| Presentation drills | `content/drills.ts` | |
-| Picture for a problem | `public/art/<id>.webp` | picked up by file name |
-| Clip for a problem | `public/clips/<id>.mp4` | picked up by file name |
-
-## Design rules
-
-All colours, fonts and radii are tokens in `src/app/globals.css`. Use only the tokens.
-Spacing sits on a 4px grid. Pixel fonts are for headings and labels; everything else is
-JetBrains Mono. No rounded corners, gradients, drop shadows or emoji.

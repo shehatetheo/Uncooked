@@ -1,22 +1,6 @@
 import type { Database, SqlJsStatic } from "sql.js";
-import type { SqlProblem } from "@/lib/content/types";
-
-export type Cell = string | number | null;
-export interface Grid {
-  columns: string[];
-  rows: Cell[][];
-}
-export interface SqlCheck {
-  status: "pass" | "fail" | "error";
-  error?: string;
-  /** Result against the visible seed, shown in the grid. */
-  actual?: Grid;
-  expected?: Grid;
-  /** Number of seeds (visible + hidden) the query matched. */
-  passed: number;
-  total: number;
-  ms: number;
-}
+import type { SqlProblem } from "@/lib/types";
+import type { Cell, Grid, RunReport } from "./grade";
 
 const cell = (v: unknown): Cell => (v === null || typeof v === "string" || typeof v === "number" ? v : String(v));
 // SQLite returns 2 and 2.0 for the same value depending on the expression.
@@ -53,25 +37,32 @@ export function gridsMatch(a: Grid, b: Grid, orderMatters: boolean): boolean {
   return ka.every((k, i) => k === kb[i]);
 }
 
-export function checkSql(SQL: SqlJsStatic, p: SqlProblem, query: string, includeHidden: boolean): SqlCheck {
-  const seeds = includeHidden ? [p.setup, ...p.hiddenSetups] : [p.setup];
-  const start = performance.now();
-  let passed = 0;
-  let actual: Grid | undefined;
-  let expected: Grid | undefined;
-  try {
-    if (!query.trim()) throw new Error("Write a query first.");
-    seeds.forEach((seed, i) => {
-      const want = execQuery(SQL, seed, p.solution);
-      const got = execQuery(SQL, seed, query);
-      if (i === 0) {
-        actual = got;
-        expected = want;
-      }
-      if (gridsMatch(got, want, p.orderMatters)) passed++;
-    });
-  } catch (e) {
-    return { status: "error", error: e instanceof Error ? e.message : String(e), actual, expected, passed, total: seeds.length, ms: performance.now() - start };
+/** The tables in a seed, for showing the schema next to the problem. */
+export function seedTables(SQL: SqlJsStatic, setup: string): { name: string; grid: Grid }[] {
+  const names = execQuery(SQL, setup, "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY rowid").rows.map((r) => String(r[0]));
+  return names.map((name) => ({ name, grid: execQuery(SQL, setup, `SELECT * FROM "${name}"`) }));
+}
+
+/** Each seed is one test: the query's rows must equal the reference query's rows. */
+export function checkSql(SQL: SqlJsStatic, p: SqlProblem, query: string, mode: "run" | "submit"): RunReport {
+  const seeds = mode === "submit" ? [p.setup, ...p.hiddenSetups] : [p.setup];
+  const start = Date.now();
+  const reference = p.solution.join("\n");
+  const report: RunReport = { mode, status: "pass", results: [], passed: 0, total: seeds.length, ms: 0, grid: {} };
+  if (!query.trim() || /^select\s*$/i.test(query.trim())) return { ...report, status: "error", fatal: "Write a query first." };
+  for (const [i, seed] of seeds.entries()) {
+    const expected = execQuery(SQL, seed, reference);
+    try {
+      const actual = execQuery(SQL, seed, query);
+      if (i === 0) report.grid = { actual, expected };
+      const pass = gridsMatch(actual, expected, p.orderMatters);
+      report.results.push({ index: i, hidden: i > 0, pass, args: [], expected: expected.rows, output: actual.rows, stdout: "", ms: 0 });
+    } catch (e) {
+      return { ...report, status: "error", fatal: `SQL error: ${e instanceof Error ? e.message : String(e)}`, ms: Date.now() - start };
+    }
   }
-  return { status: passed === seeds.length ? "pass" : "fail", actual, expected, passed, total: seeds.length, ms: performance.now() - start };
+  report.passed = report.results.filter((r) => r.pass).length;
+  report.status = report.passed === seeds.length ? "pass" : "fail";
+  report.ms = Date.now() - start;
+  return report;
 }

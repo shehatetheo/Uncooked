@@ -1,7 +1,7 @@
 /**
  * The Python side of the judge. The same source runs in the browser worker
  * (Pyodide) and in the Vitest reference-solution check, so a test that passes
- * locally passes identically on the phone.
+ * in the check passes identically on the phone.
  */
 export const HARNESS = String.raw`
 import json, sys, time, io, traceback
@@ -29,6 +29,15 @@ def _to_list(ns, arr):
         head = ns['ListNode'](v, head)
     return head
 
+def _to_cycle(ns, value):
+    arr, pos = value
+    nodes = [ns['ListNode'](v) for v in (arr or [])]
+    for a, b in zip(nodes, nodes[1:]):
+        a.next = b
+    if nodes and pos is not None and pos >= 0:
+        nodes[-1].next = nodes[pos]
+    return nodes[0] if nodes else None
+
 def _from_list(node):
     out, seen = [], 0
     while node is not None:
@@ -36,7 +45,7 @@ def _from_list(node):
         node = node.next
         seen += 1
         if seen > 100000:
-            raise RuntimeError('linked list has a cycle')
+            raise RuntimeError('the returned linked list has a cycle')
     return out
 
 def _to_tree(ns, arr):
@@ -70,11 +79,17 @@ def _from_tree(root):
 def _conv_in(ns, value, kind):
     if kind == 'list': return _to_list(ns, value)
     if kind == 'tree': return _to_tree(ns, value)
+    if kind == 'cycle': return _to_cycle(ns, value)
     return value
 
-def _conv_out(value, kind):
+def _conv_out(value, kind, conv):
     if kind == 'list': return _from_list(value)
     if kind == 'tree': return _from_tree(value)
+    if kind == 'arg0': return conv[0]
+    if kind == 'prefix':
+        if not isinstance(value, int) or isinstance(value, bool):
+            raise TypeError('expected the function to return an int (the count k), got %r' % (value,))
+        return conv[0][:value]
     return value
 
 def _jsonable(o):
@@ -99,6 +114,19 @@ def _trace(code):
     msg = traceback.format_exception_only(etype, err)[-1].strip()
     return '\n'.join(['Traceback (most recent call last):'] + lines + [msg])
 
+def _call(ns, p, args):
+    """Run one test. Returns (output, converted args)."""
+    if p.get('design'):
+        ops, params = args
+        obj = ns[ops[0]](*params[0])
+        out = [None]
+        for op, a in zip(ops[1:], params[1:]):
+            out.append(getattr(obj, op)(*a))
+        return out, []
+    conv = [_conv_in(ns, a, k) for a, k in zip(args, p['kinds'])]
+    out = getattr(ns['Solution'](), p['method'])(*conv)
+    return _conv_out(out, p['returns'], conv), conv
+
 def run_tests(payload):
     p = json.loads(payload)
     code = p['code']
@@ -108,22 +136,22 @@ def run_tests(payload):
         exec(compile(code, 'solution.py', 'exec'), ns)
     except BaseException:
         return json.dumps({'fatal': _trace(code)})
-    if 'Solution' not in ns:
-        return json.dumps({'fatal': 'NameError: no class named Solution was defined'})
-    if not hasattr(ns['Solution'], p['method']):
+    cls = p.get('design') or 'Solution'
+    if cls not in ns:
+        return json.dumps({'fatal': 'NameError: no class named %s was defined' % cls})
+    if not p.get('design') and not hasattr(ns['Solution'], p['method']):
         return json.dumps({'fatal': "AttributeError: Solution has no method '%s'" % p['method']})
     results = []
     for args in p['tests']:
         res = {}
         buf, old = io.StringIO(), sys.stdout
         try:
-            conv = [_conv_in(ns, a, k) for a, k in zip(args, p['kinds'])]
             sys.stdout = buf
             start = time.perf_counter()
-            out = getattr(ns['Solution'](), p['method'])(*conv)
+            out, _ = _call(ns, p, args)
             res['ms'] = (time.perf_counter() - start) * 1000
             sys.stdout = old
-            res['output'] = json.loads(json.dumps(_conv_out(out, p['returns']), default=_jsonable))
+            res['output'] = json.loads(json.dumps(out, default=_jsonable))
             res['ok'] = True
         except BaseException:
             sys.stdout = old

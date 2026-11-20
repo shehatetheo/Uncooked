@@ -6,8 +6,6 @@ export default defineConfig({
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
       "@content": fileURLToPath(new URL("./content", import.meta.url)),
-      // server-only throws outside a React Server bundle; tests import server code directly
-      "server-only": fileURLToPath(new URL("./tests/stubs/empty.ts", import.meta.url)),
     },
   },
   test: { include: ["tests/**/*.test.ts"], testTimeout: 120_000 },

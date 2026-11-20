@@ -1,103 +1,90 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { configured, fail, limited, passcodeOk } from "@/lib/interview/guard";
-import { FEEDBACK_PROMPT, systemPrompt } from "@/lib/interview/prompt";
-import { isRound, MAX_TURN_CHARS, MAX_TURNS, type Turn } from "@/lib/interview/rounds";
+import { streamText, type ModelMessage } from "ai";
+import { problemById } from "@content/index";
+import { REASONING } from "@/lib/ai/config";
+import { contextBlock, EVENT_MARKER, systemPrompt } from "@/lib/ai/prompt";
+import { MAX_CODE_CHARS, type InterviewEvent, type InterviewRequest } from "@/lib/ai/protocol";
+import { cleanMessages, cleanRun, explain, fail, limited, markWorking, modelsToTry, worthRetrying } from "@/lib/ai/server";
+import { PHASES, type Phase } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const MODEL = "claude-opus-5-5";
-const client = new Anthropic(); // reads ANTHROPIC_API_KEY from the server environment only
-
-function parseTurns(raw: unknown): Turn[] | null {
-  if (!Array.isArray(raw) || raw.length > MAX_TURNS) return null;
-  const out: Turn[] = [];
-  for (const t of raw) {
-    if (!t || typeof t !== "object") return null;
-    const { role, content } = t as Record<string, unknown>;
-    if ((role !== "user" && role !== "assistant") || typeof content !== "string" || content.length > MAX_TURN_CHARS) return null;
-    if (content.trim()) out.push({ role, content });
-  }
-  return out;
-}
+const EVENTS = Object.keys(EVENT_MARKER) as InterviewEvent[];
 
 /**
- * One interviewer turn (or the closing feedback), streamed back as plain text.
- * Body: { round, mode: "turn" | "feedback", messages: Turn[], minutesLeft? }
- * Header: x-interview-passcode
+ * One interviewer turn, streamed back as plain text.
+ * The model is reached through Vercel AI Gateway with the project's OIDC token.
  */
 export async function POST(req: Request): Promise<Response> {
-  if (!configured()) return fail(503, "not_configured", "The AI interviewer isn't set up on this deployment.");
-  if (!passcodeOk(req)) return fail(401, "bad_passcode", "Wrong passcode.");
-  if (limited(req)) return fail(429, "rate_limited", "Too many requests. Wait a few minutes.");
-
-  let body: Record<string, unknown>;
+  if (limited(req)) return fail(429, "rate_limited", "Too many messages in a short time. Wait a few minutes.");
+  let body: Partial<InterviewRequest>;
   try {
     const text = await req.text();
-    if (text.length > MAX_TURNS * MAX_TURN_CHARS) return fail(413, "too_large", "Conversation is too long.");
-    body = JSON.parse(text) as Record<string, unknown>;
+    if (text.length > 200_000) return fail(400, "bad_request", "That conversation is too long.");
+    body = JSON.parse(text) as Partial<InterviewRequest>;
   } catch {
     return fail(400, "bad_request", "Body must be JSON.");
   }
-  const { round, mode, minutesLeft } = body;
-  const turns = parseTurns(body.messages);
-  if (!isRound(round) || (mode !== "turn" && mode !== "feedback") || !turns) return fail(400, "bad_request", "Invalid interview request.");
+  const p = typeof body.problemId === "string" ? problemById.get(body.problemId) : undefined;
+  const phase = PHASES.includes(body.phase as Phase) ? (body.phase as Phase) : null;
+  const history = cleanMessages(body.messages);
+  const event = EVENTS.includes(body.event as InterviewEvent) ? (body.event as InterviewEvent) : undefined;
+  if (!p || !phase || !history) return fail(400, "bad_request", "Unknown problem or malformed request.");
 
-  const feedback = mode === "feedback";
-  const messages: Anthropic.Beta.BetaMessageParam[] = turns.length ? turns.map((t) => ({ role: t.role, content: t.content })) : [];
-  // The conversation must open with a user turn.
-  if (!messages.length || messages[0]!.role !== "user") messages.unshift({ role: "user", content: "(The candidate has joined the call. Greet them in one sentence and begin.)" });
-  if (feedback) messages.push({ role: "user", content: FEEDBACK_PROMPT });
-  else if (typeof minutesLeft === "number" && messages[messages.length - 1]!.role === "user") {
-    // Operator note after the latest user turn; keeps the cached prefix intact.
-    const note = minutesLeft <= 0 ? "Time is up. Thank the candidate and close the interview in one or two sentences, without asking another question." : minutesLeft <= 2 ? `About ${Math.max(1, Math.round(minutesLeft))} minute left. Start wrapping up: one last short question at most.` : null;
-    if (note) messages.push({ role: "system", content: note });
-  }
+  // The conversation must end with a user turn: what the candidate said, or the event marker.
+  if (event && history[history.length - 1]?.role !== "user") history.push({ role: "user", content: EVENT_MARKER[event] });
+  if (history[history.length - 1]?.role !== "user") return fail(400, "bad_request", "Nothing to reply to.");
 
-  const stream = client.beta.messages.stream({
-    model: MODEL,
-    max_tokens: feedback ? 16000 : 4000,
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
-    output_config: { effort: feedback ? "medium" : "low" },
-    system: [{ type: "text", text: systemPrompt(round), cache_control: { type: "ephemeral" } }],
-    messages,
+  const context = contextBlock(p, {
+    phase,
+    event,
+    code: typeof body.code === "string" ? body.code.slice(0, MAX_CODE_CHARS) : "",
+    run: cleanRun(body.run),
+    minutesLeft: typeof body.minutesLeft === "number" ? body.minutesLeft : 25,
+    hintsShown: typeof body.hintsShown === "number" ? body.hintsShown : 0,
   });
+  const messages: ModelMessage[] = history.map((m, i) => (i === history.length - 1 ? { role: "user", content: `${context}\n\n${m.content.startsWith("[") ? m.content : `The candidate says: ${m.content}`}` } : { role: m.role, content: m.content }));
 
-  // Pull the first event before answering, so API errors (no credits, bad key)
-  // become a proper HTTP status instead of a broken stream.
-  const events = stream[Symbol.asyncIterator]();
-  let first: IteratorResult<Anthropic.Beta.BetaRawMessageStreamEvent>;
-  try {
-    first = await events.next();
-  } catch (e) {
-    if (e instanceof Anthropic.AuthenticationError || e instanceof Anthropic.PermissionDeniedError) return fail(502, "bad_key", "The Anthropic API key was rejected.");
-    if (e instanceof Anthropic.RateLimitError) return fail(429, "rate_limited", "Anthropic rate limit hit. Wait a minute and try again.");
-    if (e instanceof Anthropic.BadRequestError && /credit balance/i.test(e.message)) return fail(402, "no_credits", "The Anthropic account has no API credits. Add credits under Plans & Billing in the Anthropic Console.");
-    if (e instanceof Anthropic.APIError) return fail(502, "api_error", `Anthropic API error ${e.status ?? ""}`.trim());
-    return fail(502, "api_error", "Could not reach the Anthropic API.");
-  }
-
-  const encoder = new TextEncoder();
-  const body$ = new ReadableStream<Uint8Array>({
-    async start(controller) {
-      const emit = (ev: Anthropic.Beta.BetaRawMessageStreamEvent) => {
-        if (ev.type === "content_block_delta" && ev.delta.type === "text_delta") controller.enqueue(encoder.encode(ev.delta.text));
-      };
-      try {
-        if (!first.done) emit(first.value);
-        for (let r = await events.next(); !r.done; r = await events.next()) emit(r.value);
-        const final = await stream.finalMessage();
-        if (final.stop_reason === "refusal") controller.enqueue(encoder.encode(" (The interviewer couldn't respond to that. Try saying it another way.)"));
-      } catch {
-        controller.enqueue(encoder.encode(" (The connection dropped. Say that again.)"));
-      } finally {
-        controller.close();
+  let lastError: unknown;
+  for (const model of modelsToTry()) {
+    try {
+      const result = streamText({ model, instructions: systemPrompt(p), messages, maxOutputTokens: 1200, reasoning: REASONING, maxRetries: 0, abortSignal: req.signal });
+      const parts = result.fullStream[Symbol.asyncIterator]();
+      // Wait for the first words before answering, so a dead model can fall through to the next one.
+      let first = "";
+      while (!first) {
+        const { value, done } = await parts.next();
+        if (done) break;
+        if (value.type === "error") throw value.error;
+        if (value.type === "text-delta") first = value.text;
       }
-    },
-    cancel() {
-      stream.abort();
-    },
-  });
-  return new Response(body$, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" } });
+      if (!first) throw new Error("The model returned no text.");
+      markWorking(model);
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream<Uint8Array>({
+        async start(controller) {
+          controller.enqueue(encoder.encode(first));
+          try {
+            for (;;) {
+              const { value, done } = await parts.next();
+              if (done) break;
+              if (value.type === "text-delta") controller.enqueue(encoder.encode(value.text));
+              if (value.type === "error") break; // keep what was already said
+            }
+          } catch {
+            /* connection dropped mid-reply: end with what we have */
+          }
+          controller.close();
+        },
+      });
+      return new Response(stream, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store", "x-interviewer-model": model } });
+    } catch (e) {
+      lastError = e;
+      if (req.signal.aborted) return new Response(null, { status: 499 });
+      if (!worthRetrying(e)) break;
+    }
+  }
+  console.error("interviewer failed:", lastError);
+  const { status, body: err } = explain(lastError);
+  return Response.json(err, { status });
 }

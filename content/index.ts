@@ -1,0 +1,40 @@
+import type { Problem } from "@/lib/types";
+import p_two_sum from "./problems/two-sum";
+import p_valid_parentheses from "./problems/valid-parentheses";
+import p_valid_palindrome from "./problems/valid-palindrome";
+import p_longest_common_prefix from "./problems/longest-common-prefix";
+import p_group_anagrams from "./problems/group-anagrams";
+import p_best_time_to_buy_and_sell_stock from "./problems/best-time-to-buy-and-sell-stock";
+import p_reverse_linked_list from "./problems/reverse-linked-list";
+import p_linked_list_cycle from "./problems/linked-list-cycle";
+import p_maximum_depth_of_binary_tree from "./problems/maximum-depth-of-binary-tree";
+import p_number_of_islands from "./problems/number-of-islands";
+import p_sort_array_by_increasing_frequency from "./problems/sort-array-by-increasing-frequency";
+import p_move_zeroes from "./problems/move-zeroes";
+import p_remove_duplicates_from_sorted_array from "./problems/remove-duplicates-from-sorted-array";
+import p_rotate_string from "./problems/rotate-string";
+import p_fibonacci_number from "./problems/fibonacci-number";
+import p_sqrtx from "./problems/sqrtx";
+import p_valid_perfect_square from "./problems/valid-perfect-square";
+import p_container_with_most_water from "./problems/container-with-most-water";
+import p_maximum_subarray from "./problems/maximum-subarray";
+import p_daily_temperatures from "./problems/daily-temperatures";
+import p_kth_largest_element_in_an_array from "./problems/kth-largest-element-in-an-array";
+import p_longest_consecutive_sequence from "./problems/longest-consecutive-sequence";
+import p_longest_palindromic_substring from "./problems/longest-palindromic-substring";
+import p_coin_change from "./problems/coin-change";
+import p_word_break from "./problems/word-break";
+import p_max_consecutive_ones_iii from "./problems/max-consecutive-ones-iii";
+import p_maximal_square from "./problems/maximal-square";
+import p_binary_search_tree_to_greater_sum_tree from "./problems/binary-search-tree-to-greater-sum-tree";
+import p_lru_cache from "./problems/lru-cache";
+import p_monotone_increasing_digits from "./problems/monotone-increasing-digits";
+import p_maximum_number_of_weeks_for_which_you_can_work from "./problems/maximum-number-of-weeks-for-which-you-can-work";
+import p_movie_rating from "./problems/movie-rating";
+
+/** The core set: asked most, in the order to practise them. */
+export const CORE: Problem[] = [p_two_sum, p_valid_parentheses, p_valid_palindrome, p_longest_common_prefix, p_group_anagrams, p_best_time_to_buy_and_sell_stock, p_reverse_linked_list, p_linked_list_cycle, p_maximum_depth_of_binary_tree, p_number_of_islands, p_sort_array_by_increasing_frequency, p_move_zeroes, p_remove_duplicates_from_sorted_array, p_rotate_string];
+/** The rest of the SAP-reported easy and medium questions. */
+export const REST: Problem[] = [p_fibonacci_number, p_sqrtx, p_valid_perfect_square, p_container_with_most_water, p_maximum_subarray, p_daily_temperatures, p_kth_largest_element_in_an_array, p_longest_consecutive_sequence, p_longest_palindromic_substring, p_coin_change, p_word_break, p_max_consecutive_ones_iii, p_maximal_square, p_binary_search_tree_to_greater_sum_tree, p_lru_cache, p_monotone_increasing_digits, p_maximum_number_of_weeks_for_which_you_can_work, p_movie_rating];
+export const problems: Problem[] = [...CORE, ...REST];
+export const problemById = new Map(problems.map((p) => [p.id, p]));

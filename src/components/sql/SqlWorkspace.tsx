@@ -13,7 +13,7 @@ import { loadSql } from "@/lib/runner/sqljs";
 import { blip } from "@/lib/sound";
 import { actions, progressOf, useStore } from "@/lib/store";
 
-function GridView({ grid, tone }: { grid?: Grid; tone?: "ok" }) {
+export function GridView({ grid, tone }: { grid?: Grid; tone?: "ok" }) {
   if (!grid) return <p className="text-sm text-ghost">no result yet</p>;
   if (!grid.columns.length) return <p className="text-sm text-ghost">(no rows)</p>;
   return (

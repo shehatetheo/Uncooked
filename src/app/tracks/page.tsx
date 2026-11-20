@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/ui";
 
 const LINKS = [
+  ["/gauntlet", "The Gauntlet", "Five questions on a call, each on its own clock. Dry run or the real thing."],
   ["/technical", "Technical interview · top 10", "Ghost type the ten most likely questions, then answer them out loud and get scored."],
   ["/course", "Crash course", "Wednesday to Friday morning, about eight hours."],
   ["/course", "Crash course", "Wednesday to Friday morning, about eight hours, everything in one path."],

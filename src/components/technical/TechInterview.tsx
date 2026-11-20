@@ -5,7 +5,7 @@ import type { Probe, TechQuestion } from "@content/technical";
 import { AsciiBar, cx, Panel } from "@/components/ui";
 import { readPass } from "@/lib/interview/passcode";
 import { canListen, canSpeak, Listener, NO_SOUND_HELP, Speaker } from "@/lib/interview/speech";
-import { followLine, INTRO_LINE, NEXT_LINE, nextStep, PROBE_LINES, WRAP_LINE } from "@/lib/simulator";
+import { ASK_GENERIC, clock, followLine, GAUNTLET_INTRO, GAUNTLET_NEXT, INTRO_LINE, isQuestion, matchQuestion, NEXT_LINE, nextStep, ONE_MIN_LINE, PROBE_LINES, TIME_UP_LINE, WRAP_LINE } from "@/lib/simulator";
 import { blip } from "@/lib/sound";
 import { actions, useStore } from "@/lib/store";
 import { liveCheck, localGrade, type GradeResult } from "@/lib/technical";
@@ -18,21 +18,57 @@ interface Toast { id: number; tone: "hit" | "tip"; text: string }
 /** How long a pause ends your turn when the mic is on. */
 const TURN_SILENCE_MS = 3200;
 const words = (t: string) => t.trim().split(/\s+/).filter(Boolean).length;
+/** The interviewer never runs more than this many reactions on one question. */
+const MAX_REACTIONS = 9;
+
+const OPENINGS = {
+  intro: { key: "sim-intro", text: INTRO_LINE },
+  next: { key: "sim-next", text: NEXT_LINE },
+  gauntlet: { key: "gauntlet-intro", text: GAUNTLET_INTRO },
+  "gauntlet-next": { key: "gauntlet-next", text: GAUNTLET_NEXT },
+} as const;
+export type Opening = keyof typeof OPENINGS;
+
+export interface InterviewProps {
+  q: TechQuestion;
+  hints: boolean;
+  voice: boolean;
+  opening?: Opening;
+  onNext?: () => void;
+  nextLabel?: string;
+  /** A clock for the answer, in seconds. */
+  limitSec?: number;
+  /** When the clock hits zero the interviewer calls time and grades you. Off = dry run, the clock just goes red. */
+  strict?: boolean;
+  /** "claude": the interviewer's replies come from Claude (needs the passcode and API credits), else the built-in script. */
+  brain?: "script" | "claude";
+  /** Only the score card after grading, for back-to-back rounds. */
+  compact?: boolean;
+  /** The grade, seconds used, and everything you said. */
+  onGraded?: (r: GradeResult, seconds: number, said: string) => void;
+  startLabel?: string;
+  /** false: a rehearsal, never marks the question completed. */
+  counts?: boolean;
+  /** Code from an outside editor; hides the built-in code pad. */
+  codeValue?: string;
+}
 
 /**
  * The interview simulator: the interviewer asks, listens, and reacts to what
  * you said, probing for what's missing, asking a follow-up, then wrapping up.
  * Then it scores you by points against the rubric.
  */
-export function TechInterview({ q, hints, voice, opening = "intro", onNext, nextLabel }: { q: TechQuestion; hints: boolean; voice: boolean; opening?: "intro" | "next"; onNext?: () => void; nextLabel?: string }) {
+export function TechInterview({ q, hints, voice, opening = "intro", onNext, nextLabel, limitSec, strict = false, brain = "script", compact = false, onGraded, startLabel, counts = true, codeValue }: InterviewProps) {
   const { tech } = useStore();
   const best = tech[q.id]?.best ?? 0;
+  const cleanBest = tech[q.id]?.cleanBest ?? 0;
   const [phase, setPhase] = useState<Phase>("ready");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [heard, setHeard] = useState("");
   const [draft, setDraft] = useState("");
   const [listening, setListening] = useState(false);
-  const [code, setCode] = useState("");
+  const [ownCode, setCode] = useState("");
+  const code = codeValue ?? ownCode;
   const [result, setResult] = useState<GradeResult | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -40,12 +76,21 @@ export function TechInterview({ q, hints, voice, opening = "intro", onNext, next
   const [micError, setMicError] = useState<string | null>(null);
   const [noSound, setNoSound] = useState(false);
   const [playing, setPlaying] = useState<string | null>(null);
+  const [thinking, setThinking] = useState(false);
+  const [aiDown, setAiDown] = useState<string | null>(null);
+  const [askedQa, setAskedQa] = useState<number[]>([]);
+  /** Used a suggested question: the run is practice, it can't complete the question. */
+  const [helped, setHelped] = useState(false);
+  const [now, setNow] = useState(0);
+  const [usedSec, setUsedSec] = useState(0);
 
   const speaker = useRef<Speaker | null>(null);
   const listener = useRef<Listener | null>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
   const turnsRef = useRef<Turn[]>([]);
   turnsRef.current = turns;
+  const codeRef = useRef("");
+  codeRef.current = code;
   const draftRef = useRef("");
   draftRef.current = draft;
   /** Ends the interviewer's current line early. */
@@ -56,6 +101,11 @@ export function TechInterview({ q, hints, voice, opening = "intro", onNext, next
   const lastHeardAt = useRef(0);
   const toastId = useRef(0);
   const tipped = useRef(new Set<string>());
+  const reactions = useRef(0);
+  const startedAt = useRef(0);
+  const warned = useRef(false);
+  const timeUp = useRef(false);
+  const aiDownRef = useRef<string | null>(null);
   const supported = useMemo(() => ({ listen: typeof window !== "undefined" && canListen(), speak: typeof window !== "undefined" && canSpeak() }), []);
 
   const candidateText = useCallback(() => turnsRef.current.filter((t) => t.who === "you").map((t) => t.text).join(" "), []);
@@ -136,6 +186,7 @@ export function TechInterview({ q, hints, voice, opening = "intro", onNext, next
   }, [stopAudio]);
 
   const yourTurn = useCallback(() => {
+    if (timeUp.current) return;
     setPhase("you");
     setDraft("");
     if (supported.listen) listen();
@@ -144,27 +195,88 @@ export function TechInterview({ q, hints, voice, opening = "intro", onNext, next
   // grade defined below; referenced through a ref so the interviewer can call it
   const gradeRef = useRef<() => void>(() => {});
 
+  /** The script's answer to a question you asked; it doesn't use up a probe. */
+  const answerQuestion = useCallback(
+    (text: string, then: () => void) => {
+      const i = matchQuestion(q, text);
+      if (i >= 0) setAskedQa((a) => (a.includes(i) ? a : [...a, i]));
+      sayLine(i >= 0 ? `${q.id}-qa-${i}` : "ask-generic", i >= 0 ? q.qa[i]!.a : ASK_GENERIC, then);
+    },
+    [q, sayLine],
+  );
+
+  /** Claude plays the interviewer on a call. Falls back to the script if it can't. */
+  const askClaude = useCallback(
+    async (): Promise<{ say: string; clip?: string; wrap: boolean } | null> => {
+      const pass = readPass();
+      if (!pass) return null;
+      setThinking(true);
+      setPhase("them");
+      try {
+        const left = limitSec ? limitSec - Math.round((Date.now() - startedAt.current) / 1000) : null;
+        const res = await fetch("/api/gauntlet", {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-interview-passcode": pass },
+          body: JSON.stringify({ questionId: q.id, turns: turnsRef.current, secondsLeft: left, dry: !strict, followed: followed.current, code: codeRef.current }),
+        });
+        if (!res.ok) {
+          const err = (await res.json().catch(() => ({}))) as { message?: string };
+          throw new Error(err.message ?? "Claude isn't available.");
+        }
+        const r = (await res.json()) as { say: string; clip?: string; wrap: boolean; follow?: boolean };
+        if (r.follow) followed.current = true;
+        return r;
+      } catch (e) {
+        const why = e instanceof Error ? e.message : "No connection.";
+        aiDownRef.current = why;
+        setAiDown(why);
+        return null;
+      } finally {
+        setThinking(false);
+      }
+    },
+    [q.id, limitSec, strict],
+  );
+
   /** The interviewer reacts to what you just said. */
   const react = useCallback(
-    (said: string) => {
+    async (said: string) => {
       const text = said.trim();
       if (!text) return yourTurn();
       setTurns((t) => [...t, { who: "you", text }]);
       turnsRef.current = [...turnsRef.current, { who: "you", text }];
+      reactions.current++;
+      if (timeUp.current) return;
+      // past the one-minute mark: a heads-up before the next line, like a real interviewer
+      const left = limitSec ? limitSec - (Date.now() - startedAt.current) / 1000 : Infinity;
+      const thenSay = (key: string, line: string, next: () => void) => {
+        if (left <= 60 && left > 0 && !warned.current) {
+          warned.current = true;
+          sayLine("time-1min", ONE_MIN_LINE, () => sayLine(key, line, next));
+        } else sayLine(key, line, next);
+      };
+      if (reactions.current > MAX_REACTIONS) return thenSay("sim-wrap", WRAP_LINE, () => gradeRef.current());
+
+      if (brain === "claude" && !aiDownRef.current) {
+        const r = await askClaude();
+        if (timeUp.current) return;
+        if (r) return thenSay(r.clip ?? "", r.say, r.wrap ? () => gradeRef.current() : yourTurn);
+      }
+      if (isQuestion(text)) return answerQuestion(text, yourTurn);
       const all = candidateText();
       const missing = liveCheck(q, all, code).filter((p) => !p.hit);
       const step = nextStep(missing, asked.current, words(all), followed.current);
       if (step.kind === "probe") {
         asked.current = [...asked.current, step.probe];
-        sayLine(`probe-${step.probe}`, PROBE_LINES[step.probe], yourTurn);
+        thenSay(`probe-${step.probe}`, PROBE_LINES[step.probe], yourTurn);
       } else if (step.kind === "follow") {
         followed.current = true;
-        sayLine(`${q.id}-follow`, followLine(q), yourTurn);
+        thenSay(`${q.id}-follow`, followLine(q), yourTurn);
       } else {
-        sayLine("sim-wrap", WRAP_LINE, () => gradeRef.current());
+        thenSay("sim-wrap", WRAP_LINE, () => gradeRef.current());
       }
     },
-    [q, code, candidateText, sayLine, yourTurn],
+    [q, code, candidateText, sayLine, yourTurn, limitSec, brain, askClaude, answerQuestion],
   );
   const reactRef = useRef(react);
   reactRef.current = react;
@@ -177,7 +289,7 @@ export function TechInterview({ q, hints, voice, opening = "intro", onNext, next
     } else {
       const text = draft;
       setDraft("");
-      reactRef.current(text);
+      void reactRef.current(text);
     }
   }, [listening, draft]);
 
@@ -197,7 +309,7 @@ export function TechInterview({ q, hints, voice, opening = "intro", onNext, next
           finishing.current = false;
           const typed = draftRef.current;
           setDraft("");
-          reactRef.current(`${text} ${typed}`.trim());
+          void reactRef.current(`${text} ${typed}`.trim());
         } else if (text.trim()) setDraft((d) => `${d}${d ? " " : ""}${text.trim()}`);
       },
       (msg) => {
@@ -224,6 +336,44 @@ export function TechInterview({ q, hints, voice, opening = "intro", onNext, next
     }, 400);
     return () => clearInterval(id);
   }, [phase, listening, heard, endTurn]);
+
+  /* ───── the clock ───── */
+  const running = !!limitSec && (phase === "them" || phase === "you") && startedAt.current > 0;
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(id);
+  }, [running]);
+  const elapsed = startedAt.current && now ? Math.max(0, Math.floor((now - startedAt.current) / 1000)) : 0;
+  const left = limitSec ? limitSec - elapsed : 0;
+  const secondsUsed = () => (startedAt.current ? Math.round((Date.now() - startedAt.current) / 1000) : 0);
+
+  // one minute left: a pop-up straight away; the interviewer says it at the next pause
+  useEffect(() => {
+    if (running && left <= 60 && left > 0 && !tipped.current.has("__minute")) {
+      tipped.current.add("__minute");
+      pushToast("tip", "One minute left. Land the complexity and an edge case.");
+    }
+  }, [running, left, pushToast]);
+
+  // the real thing: at zero the interviewer calls time
+  useEffect(() => {
+    if (!running || !strict || left > 0 || timeUp.current) return;
+    timeUp.current = true;
+    const pending = `${heard} ${draftRef.current}`.trim();
+    listener.current?.abort();
+    setListening(false);
+    setHeard("");
+    setDraft("");
+    if (pending) {
+      turnsRef.current = [...turnsRef.current, { who: "you", text: pending }];
+      setTurns(turnsRef.current);
+    }
+    audio.current?.pause();
+    speaker.current?.cancel();
+    skipRef.current = null;
+    sayLine("time-up", TIME_UP_LINE, () => gradeRef.current());
+  }, [running, strict, left, heard, sayLine]);
 
   /* ───── live checklist and pop-ups ───── */
   const liveText = `${candidateText()} ${heard} ${draft}`;
@@ -271,15 +421,30 @@ export function TechInterview({ q, hints, voice, opening = "intro", onNext, next
     followed.current = false;
     tipped.current = new Set();
     prevHits.current = new Set();
+    reactions.current = 0;
+    startedAt.current = 0;
+    warned.current = false;
+    timeUp.current = false;
+    setAskedQa([]);
+    setHelped(false);
+    setNow(0);
   };
 
   const start = () => {
     reset();
     // the first line must start inside the tap: iOS only plays audio a user gesture started
-    sayLine(opening === "intro" ? "sim-intro" : "sim-next", opening === "intro" ? INTRO_LINE : NEXT_LINE, () => sayLine(q.id, q.ask, yourTurn));
+    const o = OPENINGS[opening];
+    sayLine(o.key, o.text, () => {
+      // the clock starts when the question does
+      startedAt.current = Date.now();
+      setNow(Date.now());
+      sayLine(q.id, q.ask, yourTurn);
+    });
   };
 
   const grade = async () => {
+    const used = secondsUsed();
+    setUsedSec(used);
     stopAudio();
     listener.current?.abort();
     setListening(false);
@@ -308,7 +473,9 @@ export function TechInterview({ q, hints, voice, opening = "intro", onNext, next
     }
     setResult(graded);
     setPhase("graded");
-    actions.techGraded(q.id, graded.score);
+    // completed only counts with hints off and no suggested questions
+    actions.techGraded(q.id, graded.score, counts && !hints && !helped);
+    onGraded?.(graded, used, said);
     if (graded.score === 100) blip.pass();
   };
   gradeRef.current = () => void grade();
@@ -344,22 +511,25 @@ export function TechInterview({ q, hints, voice, opening = "intro", onNext, next
   if (phase === "graded" && result)
     return (
       <div className="flex flex-col gap-3" data-testid="tech-result">
-        <Panel accent={result.score === 100} title={result.score === 100 ? "100 · nailed it" : `Score ${result.score} · retry until 100`} right={<span className="chip">{result.source === "ai" ? "graded by Claude" : "graded in browser"}</span>}>
+        <Panel accent={result.score === 100 && !hints && !helped && counts} title={result.score === 100 ? (hints || helped ? "100 · practice" : !counts ? "100 · dry run" : "100 · clean, complete") : `Score ${result.score} · retry until 100`} right={<span className="chip">{result.source === "ai" ? "graded by Claude" : "graded in browser"}</span>}>
           <div className="p-4">
             <p className="font-pixel text-2xl tabular-nums" data-testid="tech-score">
               <span className={result.score === 100 ? "text-accent" : result.score >= 70 ? "text-text" : "text-second"}>{result.score}</span>
               <span className="text-base text-dim">/100</span>
-              <span className="pl-3 text-xs text-dim">best {Math.max(best, result.score)}</span>
+              <span className="pl-3 text-xs text-dim">clean best {!hints && !helped ? Math.max(cleanBest, result.score) : cleanBest}</span>
+              {limitSec ? <span className={cx("pl-3 text-xs", usedSec > limitSec ? "text-error" : "text-dim")} data-testid="time-used">{clock(usedSec)} of {clock(limitSec)}</span> : null}
             </p>
+            {(hints || helped) && <p className="mt-2 text-xs text-second" data-testid="practice-note">Practice run: {helped ? "you used a suggested question" : "hints were on"}. It only counts as completed with hints off and no help.</p>}
             <AsciiBar value={result.score / 100} width={20} className="mt-2 block" />
             <p className="mt-3 text-sm">{result.summary}</p>
             {note && <p className="mt-2 text-xs text-second">{note}</p>}
             <div className="mt-4 flex flex-wrap gap-1">
-              <button type="button" className={cx("btn", result.score < 100 && "btn-primary")} onClick={() => { reset(); setPhase("ready"); }} autoFocus={result.score < 100}>Retry</button>
-              {onNext && <button type="button" className={cx("btn", result.score === 100 && "btn-primary")} onClick={onNext}>{nextLabel ?? "Next question"}</button>}
+              {!compact && <button type="button" className={cx("btn", result.score < 100 && "btn-primary")} onClick={() => { reset(); setPhase("ready"); }} autoFocus={result.score < 100}>Retry</button>}
+              {onNext && <button type="button" className={cx("btn", (result.score === 100 || compact) && "btn-primary")} onClick={onNext} autoFocus={compact} data-testid="next-round">{nextLabel ?? "Next question"}</button>}
             </div>
           </div>
         </Panel>
+        {compact ? null : (<>
 
         <Panel title="Points">
           <ul>
@@ -402,6 +572,7 @@ export function TechInterview({ q, hints, voice, opening = "intro", onNext, next
         <Panel title={`The conversation · ${turns.length} turns`}>
           <Conversation turns={turns} />
         </Panel>
+        </>)}
       </div>
     );
 
@@ -409,23 +580,36 @@ export function TechInterview({ q, hints, voice, opening = "intro", onNext, next
   return (
     <div className="grid items-start gap-3 lg:grid-cols-[1fr_320px]">
       <div className="flex min-w-0 flex-col gap-3">
-        <Panel title="Interview" accent={phase === "them"} right={<span className="text-xs text-dim">best <span className={best === 100 ? "text-accent" : "text-text"}>{best}</span>/100</span>}>
+        <Panel
+          title={brain === "claude" && !aiDown ? "On call · Claude interviewer" : "Interview"}
+          accent={phase === "them"}
+          right={
+            limitSec && phase !== "ready" ? (
+              <span className={cx("font-pixel text-sm tabular-nums", left <= 0 ? "text-error" : left <= 60 ? "text-second" : "text-text")} data-testid="clock">{left <= 0 && !strict ? `+${clock(-left)}` : clock(Math.max(0, left))}</span>
+            ) : (
+              <span className="text-xs text-dim">clean best <span className={cleanBest === 100 ? "text-accent" : "text-text"}>{cleanBest}</span>/100</span>
+            )
+          }
+        >
           <div className="p-4">
             {noSound && <p className="mb-3 text-sm text-second" role="status" data-testid="no-sound">{NO_SOUND_HELP}</p>}
+            {brain === "claude" && aiDown && <p className="mb-3 text-xs text-second" data-testid="ai-down">Claude interviewer unavailable ({aiDown}). The built-in interviewer took over, same call.</p>}
             {phase === "ready" ? (
               <div>
                 <p className="text-sm text-dim">
+                  {limitSec ? <span className="text-text">{clock(limitSec)} on the clock{strict ? ": at zero the interviewer calls time." : ". Overtime shows in red, but you won't be cut off."} </span> : null}
                   A simulated interview: the interviewer asks, you answer out loud, and it reacts to what you said. Skip the brute force or the complexity and it will ask for it, then a follow-up, then it wraps up and scores you. Pause for a few seconds and it takes that as the end of your answer.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-1">
-                  <button type="button" className="btn btn-primary" onClick={start} data-testid="ask">Start the interview</button>
+                  <button type="button" className="btn btn-primary" onClick={start} data-testid="ask">{startLabel ?? "Start the interview"}</button>
                   {voice && <button type="button" className="btn" onClick={testVoice}>Test voice</button>}
                 </div>
               </div>
             ) : (
               <>
-                <Conversation turns={turns} live={phase === "you" ? `${heard}${heard && draft ? " " : ""}${draft}` : ""} speaking={phase === "them"} />
-                {phase === "them" && (
+                <Conversation turns={turns} live={phase === "you" ? `${heard}${heard && draft ? " " : ""}${draft}` : ""} speaking={phase === "them" && !thinking} />
+                {thinking && <p className="mt-2 text-sm text-second" data-testid="thinking">Interviewer is thinking…</p>}
+                {phase === "them" && !thinking && (
                   <button type="button" className="btn btn-sm mt-3" onClick={() => skipRef.current?.()} data-testid="skip">Skip ▸</button>
                 )}
               </>
@@ -449,6 +633,20 @@ export function TechInterview({ q, hints, voice, opening = "intro", onNext, next
                 </div>
               )}
               {micError && <p className="text-xs text-error">{micError}</p>}
+              {hints && q.qa.some((_, i) => !askedQa.includes(i)) ? (
+                <div data-testid="ask-chips">
+                  <p className="label mb-1">Ask the interviewer <span className="normal-case tracking-normal text-ghost">(or just ask out loud; tapping one makes this a practice run)</span></p>
+                  <div className="flex flex-wrap gap-1">
+                    {q.qa.map((item, i) =>
+                      askedQa.includes(i) ? null : (
+                        <button key={i} type="button" className="btn btn-sm" onClick={() => { setHelped(true); listener.current?.abort(); setListening(false); setHeard(""); void reactRef.current(item.q); }}>{item.q}</button>
+                      ),
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-dim">You can ask the interviewer a question anytime: just ask it out loud.</p>
+              )}
               <form className="flex flex-col gap-2" onSubmit={(e) => { e.preventDefault(); endTurn(); }}>
                 <textarea className="field min-h-[80px]" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={supported.listen ? "Or type your reply here." : "Type your reply, or use the keyboard's dictation key."} aria-label="Your answer" />
                 <div className="flex flex-wrap items-center gap-2">
@@ -456,10 +654,10 @@ export function TechInterview({ q, hints, voice, opening = "intro", onNext, next
                   <button type="button" className="btn" onClick={() => void grade()} data-testid="submit-answer">End and grade me</button>
                 </div>
               </form>
-              <details>
+              {codeValue === undefined && <details>
                 <summary className="label cursor-pointer">{q.kind === "sql" ? "Query pad" : "Code pad"} (optional, graded too)</summary>
                 <textarea className="field mt-2 min-h-[140px] font-mono text-sm" value={code} onChange={(e) => setCode(e.target.value)} placeholder={q.kind === "sql" ? "SELECT …" : "def solve(…):"} aria-label="Code pad" autoCapitalize="off" autoCorrect="off" spellCheck={false} />
-              </details>
+              </details>}
             </div>
           </Panel>
         )}

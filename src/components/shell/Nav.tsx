@@ -8,6 +8,7 @@ import { cx } from "@/components/ui";
 export const NAV = [
   { href: "/", label: "Home", key: "h" },
   { href: "/technical", label: "Top 10", key: "x" },
+  { href: "/gauntlet", label: "Gauntlet", key: "g" },
   { href: "/course", label: "Course", key: "c" },
   { href: "/plan", label: "Plan", key: "a" },
   { href: "/problems", label: "Code", key: "p" },
@@ -24,7 +25,7 @@ export const NAV = [
 const MOBILE = [
   { href: "/", label: "Home" },
   { href: "/technical", label: "Top 10" },
-  { href: "/course", label: "Course" },
+  { href: "/gauntlet", label: "Gauntlet" },
   { href: "/tracks", label: "Tracks" },
   { href: "/stats", label: "Stats" },
 ];

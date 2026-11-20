@@ -64,6 +64,21 @@ export interface TechProgress {
   runs: number;
   /** Most recent scores, newest last. */
   history: number[];
+  /** Best ghost score typed blind: ghost hidden, no peeks. Only this completes it. */
+  blindBest?: number;
+  /** Best interview score with hints off and no suggested questions. Only this completes it. */
+  cleanBest?: number;
+}
+
+/** One finished run of the gauntlet. */
+export interface GauntletRun {
+  at: number;
+  /** Anything but the real thing. */
+  dry: boolean;
+  mode?: "practice" | "dry" | "real";
+  /** Average of the five scores. */
+  score: number;
+  rounds: { id: string; score: number; seconds: number; limit: number }[];
 }
 
 export interface Settings {
@@ -87,6 +102,7 @@ export interface State {
   /** Manually ticked plan tasks, by task id. */
   planDone: Record<string, boolean>;
   tech: Record<string, TechProgress>;
+  gauntlet: GauntletRun[];
   settings: Settings;
 }
 
@@ -101,7 +117,7 @@ const DEFAULT_SETTINGS: Settings = {
 };
 
 const KEY = "uncooked:v1";
-let state: State = { ready: false, progress: {}, attempts: [], answers: {}, drafts: {}, planDone: {}, tech: {}, settings: DEFAULT_SETTINGS };
+let state: State = { ready: false, progress: {}, attempts: [], answers: {}, drafts: {}, planDone: {}, tech: {}, gauntlet: [], settings: DEFAULT_SETTINGS };
 const listeners = new Set<() => void>();
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -150,6 +166,7 @@ export function loadStore(): Promise<void> {
       drafts: saved?.drafts ?? {},
       planDone: saved?.planDone ?? {},
       tech: saved?.tech ?? {},
+      gauntlet: saved?.gauntlet ?? [],
       settings: { ...DEFAULT_SETTINGS, ...saved?.settings },
     };
     emit();
@@ -272,18 +289,24 @@ export const actions = {
     update((s) => (s.drafts[id] === code ? s : { ...s, drafts: { ...s.drafts, [id]: code } }));
   },
 
-  techGhost(id: string, score: number) {
+  /** @param blind typed with the ghost hidden and no peeks */
+  techGhost(id: string, score: number, blind = false) {
     update((s) => {
       const p = s.tech[id] ?? { ghostBest: 0, ghostRuns: 0, best: 0, runs: 0, history: [] };
-      return { ...s, tech: { ...s.tech, [id]: { ...p, ghostBest: Math.max(p.ghostBest, score), ghostRuns: p.ghostRuns + 1 } } };
+      return { ...s, tech: { ...s.tech, [id]: { ...p, ghostBest: Math.max(p.ghostBest, score), ghostRuns: p.ghostRuns + 1, blindBest: blind ? Math.max(p.blindBest ?? 0, score) : p.blindBest } } };
     });
   },
 
-  techGraded(id: string, score: number) {
+  /** @param clean hints off and no suggested questions used */
+  techGraded(id: string, score: number, clean = false) {
     update((s) => {
       const p = s.tech[id] ?? { ghostBest: 0, ghostRuns: 0, best: 0, runs: 0, history: [] };
-      return { ...s, tech: { ...s.tech, [id]: { ...p, best: Math.max(p.best, score), runs: p.runs + 1, history: [...p.history, score].slice(-10) } } };
+      return { ...s, tech: { ...s.tech, [id]: { ...p, best: Math.max(p.best, score), runs: p.runs + 1, history: [...p.history, score].slice(-10), cleanBest: clean ? Math.max(p.cleanBest ?? 0, score) : p.cleanBest } } };
     });
+  },
+
+  gauntletDone(run: GauntletRun) {
+    update((s) => ({ ...s, gauntlet: [...s.gauntlet, run].slice(-30) }));
   },
 
   togglePlanTask(id: string) {
@@ -311,11 +334,12 @@ export const actions = {
       drafts: data.drafts ?? {},
       planDone: data.planDone ?? {},
       tech: data.tech ?? {},
+      gauntlet: data.gauntlet ?? [],
       settings: { ...DEFAULT_SETTINGS, ...data.settings },
     }));
   },
 
   wipe() {
-    update((s) => ({ ...s, progress: {}, attempts: [], answers: {}, drafts: {}, planDone: {}, tech: {} }));
+    update((s) => ({ ...s, progress: {}, attempts: [], answers: {}, drafts: {}, planDone: {}, tech: {}, gauntlet: [] }));
   },
 };

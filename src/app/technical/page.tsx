@@ -29,14 +29,15 @@ export default function TechnicalPage() {
     window.scrollTo({ top: 0 });
   }, [view]);
 
-  const ghostDone = TECH.filter((q) => (tech[q.id]?.ghostBest ?? 0) === 100).length;
-  const interviewDone = TECH.filter((q) => (tech[q.id]?.best ?? 0) === 100).length;
+  // completed means blind (ghost) or clean (interview: hints off, no suggested questions)
+  const ghostDone = TECH.filter((q) => (tech[q.id]?.blindBest ?? 0) === 100).length;
+  const interviewDone = TECH.filter((q) => (tech[q.id]?.cleanBest ?? 0) === 100).length;
   const avg = Math.round(TECH.reduce((a, q) => a + (tech[q.id]?.best ?? 0), 0) / TECH.length);
 
   const open = (index: number, stage: Stage, run = false) => setView({ kind: "question", index, stage, run });
   const startRun = (stage: Stage) => {
     // a run starts at the first question not yet at 100 for that stage
-    const first = TECH.findIndex((q) => (stage === "ghost" ? tech[q.id]?.ghostBest ?? 0 : tech[q.id]?.best ?? 0) < 100);
+    const first = TECH.findIndex((q) => (stage === "ghost" ? tech[q.id]?.blindBest ?? 0 : tech[q.id]?.cleanBest ?? 0) < 100);
     open(first === -1 ? 0 : first, stage, true);
   };
 
@@ -90,10 +91,10 @@ export default function TechnicalPage() {
     return (
       <div className="mx-auto flex max-w-[860px] flex-col gap-4">
         <PageHeader kicker="Technical interview" title={isGhost ? "Ghost run done" : "Interview run done"} />
-        <Panel accent title={isGhost ? `${ghostDone}/10 at 100%` : `Average best ${avg}/100 · ${interviewDone}/10 at 100`}>
+        <Panel accent title={isGhost ? `${ghostDone}/10 at 100% blind` : `Average best ${avg}/100 · ${interviewDone}/10 clean at 100`}>
           <ul>
             {TECH.map((q, i) => {
-              const v = isGhost ? tech[q.id]?.ghostBest ?? 0 : tech[q.id]?.best ?? 0;
+              const v = isGhost ? tech[q.id]?.blindBest ?? 0 : tech[q.id]?.cleanBest ?? 0;
               return (
                 <li key={q.id} className="grid grid-cols-[32px_1fr_auto_auto] items-center gap-3 border-b border-line px-3 py-2 text-sm last:border-0">
                   <span className="font-pixel text-2xs text-ghost">{pad(i + 1)}</span>
@@ -125,12 +126,14 @@ export default function TechnicalPage() {
       <section className="grid gap-3 md:grid-cols-3">
         <div className="panel p-4">
           <p className="label">Step 1 · watch, then ghost type</p>
-          <p className="mt-1 font-pixel text-xl"><span className={ghostDone === 10 ? "text-accent" : "text-text"}>{ready ? ghostDone : 0}</span><span className="text-sm text-dim">/10 at 100%</span></p>
+          <p className="mt-1 font-pixel text-xl"><span className={ghostDone === 10 ? "text-accent" : "text-text"}>{ready ? ghostDone : 0}</span><span className="text-sm text-dim">/10 done blind</span></p>
+          <p className="text-xs text-dim">Counts only with the ghost hidden and no peeks.</p>
           <button type="button" className="btn btn-primary mt-3 w-full" onClick={() => startRun("ghost")}>{ghostDone ? "Continue ghost run" : "Start ghost run"}</button>
         </div>
         <div className="panel p-4">
           <p className="label">Step 2 · voice interview</p>
-          <p className="mt-1 font-pixel text-xl"><span className={interviewDone === 10 ? "text-accent" : "text-text"}>{ready ? interviewDone : 0}</span><span className="text-sm text-dim">/10 at 100</span></p>
+          <p className="mt-1 font-pixel text-xl"><span className={interviewDone === 10 ? "text-accent" : "text-text"}>{ready ? interviewDone : 0}</span><span className="text-sm text-dim">/10 clean at 100</span></p>
+          <p className="text-xs text-dim">Counts only with hints off and no suggested questions.</p>
           <button type="button" className={cx("btn mt-3 w-full", ghostDone === 10 && "btn-primary")} onClick={() => startRun("interview")}>{interviewDone ? "Continue interview run" : "Start interview run"}</button>
         </div>
         <div className="panel p-4">
@@ -144,8 +147,10 @@ export default function TechnicalPage() {
         <ul>
           {TECH.map((q, i) => {
             const t = tech[q.id];
-            const g = t?.ghostBest ?? 0;
-            const b = t?.best ?? 0;
+            const g = t?.blindBest ?? 0;
+            const b = t?.cleanBest ?? 0;
+            const pg = t?.ghostBest ?? 0;
+            const pb = t?.best ?? 0;
             return (
               <li key={q.id} className="grid grid-cols-[28px_1fr] items-center gap-x-3 gap-y-2 border-b border-line px-3 py-3 last:border-0 md:grid-cols-[28px_1fr_90px_110px_auto]">
                 <span className="font-pixel text-2xs text-ghost">{pad(i + 1)}</span>
@@ -153,8 +158,8 @@ export default function TechnicalPage() {
                   <span className="block truncate text-sm">{q.title}</span>
                   <span className="block text-xs text-dim">{q.kind === "sql" ? "SQL" : "Python"} · <span className={planDone[`vid-${q.video.id}`] ? "text-accent" : "text-second"}>▶ {q.video.length}{planDone[`vid-${q.video.id}`] ? " watched" : ""}</span> · {q.why}</span>
                 </span>
-                <span className="col-start-2 text-xs tabular-nums md:col-start-auto">ghost <span className={g === 100 ? "text-accent" : "text-text"}>{ready ? g : 0}%</span></span>
-                <span className="col-start-2 text-xs tabular-nums md:col-start-auto">interview <span className={b === 100 ? "text-accent" : "text-text"}>{ready ? b : 0}</span>/100</span>
+                <span className="col-start-2 text-xs tabular-nums md:col-start-auto" title={`practice best ${pg}%`}>blind <span className={g === 100 ? "text-accent" : "text-text"}>{ready ? g : 0}%</span>{g === 100 && " ■"}</span>
+                <span className="col-start-2 text-xs tabular-nums md:col-start-auto" title={`practice best ${pb}`}>clean <span className={b === 100 ? "text-accent" : "text-text"}>{ready ? b : 0}</span>/100{b === 100 && " ■"}</span>
                 <span className="col-start-2 flex gap-1 md:col-start-auto">
                   <button type="button" className="btn btn-sm" onClick={() => open(i, "ghost")}>Ghost</button>
                   <button type="button" className="btn btn-sm" onClick={() => open(i, "interview")}>Interview</button>

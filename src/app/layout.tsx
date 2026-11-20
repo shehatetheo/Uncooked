@@ -13,7 +13,7 @@ import { problems, sqlProblems } from "@/lib/content";
 const CATALOG = buildCatalog();
 
 // every route, handed to the service worker so the whole app opens offline
-const WARM_URLS = ["/", "/technical", "/course", "/plan", "/interview", "/problems", "/sql", "/quiz", "/resume", "/behavioral", "/review", "/timed", "/stats", "/tracks", "/sheets", "/settings", ...problems.map((p) => `/p/${p.id}`), ...sqlProblems.map((p) => `/sql/${p.id}`)];
+const WARM_URLS = ["/", "/technical", "/gauntlet", "/course", "/plan", "/interview", "/problems", "/sql", "/quiz", "/resume", "/behavioral", "/review", "/timed", "/stats", "/tracks", "/sheets", "/settings", ...problems.map((p) => `/p/${p.id}`), ...sqlProblems.map((p) => `/sql/${p.id}`)];
 
 export const metadata: Metadata = {
   title: { default: "Uncooked", template: "%s · Uncooked" },

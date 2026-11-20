@@ -48,6 +48,8 @@ export interface TechQuestion {
   /** A strong spoken answer, in your voice. */
   say: string;
   followUp: { q: string; a: string };
+  /** Questions the candidate might ask; answers match recorded clips <id>-qa-<i>. */
+  qa: { q: string; a: string; keys: string[] }[];
 }
 
 const LINEAR = "\\blinear\\b|o\\s*\\(\\s*n\\s*\\)|\\bo of n\\b(?!\\s*(log|squared))|\\bbig o of n\\b(?!\\s*(log|squared))|\\bo n\\b(?!\\s*log)";
@@ -74,6 +76,11 @@ export const TECH: TechQuestion[] = [
     ],
     say: "So I return just the names, highest grade first, and on a tie I go alphabetical. I'd use Python's sorted with a key. The key is a tuple: minus the grade, then the name. Sorting ascending on minus grade puts the highest grades first, and when grades tie, the name breaks the tie A to Z, all in one sort. Then I pull out the names with a list comprehension. That's O(n log n) time for the sort and O(n) space for the new list. An empty list just returns an empty list.",
     followUp: { q: "Can you do it without the negative-number trick?", a: "Sort twice, using stability: first sort by name, then sort by grade with reverse=True. Python's sort is stable, so names stay alphabetical within each grade." },
+    qa: [
+      { q: "Can two students have the same name?", a: "No, names are unique. And grades are whole numbers from zero to a hundred.", keys: ["same", "name", "unique", "duplicate", "names"] },
+      { q: "Should I return the names or the grades too?", a: "Just the list of names, in order. Not the grades.", keys: ["return", "output", "names", "grades", "back"] },
+      { q: "Can the list be empty?", a: "It can be. An empty list should give back an empty list.", keys: ["empty", "list", "none", "zero"] },
+    ],
   },
   {
     id: "t-compress",
@@ -94,6 +101,11 @@ export const TECH: TechQuestion[] = [
     ],
     say: "I'll walk the string with an index i. At each position I start a second index j at i and move it forward while the character stays the same, so j minus i is the length of that run. I append the character plus that count to a list, then jump i to j and repeat. At the end I join the list into one string. I use a list and join because strings are immutable, so adding with plus-equals in a loop can be quadratic. It's one pass, so O(n) time and O(n) space. Runs are counted separately, so a-a-b-b-a-a gives a2 b2 a2, and an empty string returns empty.",
     followUp: { q: "What if they only want the compressed version when it's actually shorter?", a: "Build it the same way, then compare lengths at the end and return the original if the compressed one isn't shorter." },
+    qa: [
+      { q: "What characters can the string have?", a: "Letters and spaces, no digits. Upper and lower case count as different characters.", keys: ["characters", "digits", "numbers", "case", "upper", "lower", "letters", "spaces"] },
+      { q: "Do I write the count when a letter appears once?", a: "Yes, always write the count, even when it's one. So a, b becomes a1 b1.", keys: ["once", "single", "count", "one", "always"] },
+      { q: "What if the compressed version is longer?", a: "Return it anyway. For now, always return the compressed version.", keys: ["longer", "shorter", "length", "bigger"] },
+    ],
   },
   {
     id: "t-two-sum",
@@ -114,6 +126,11 @@ export const TECH: TechQuestion[] = [
     ],
     say: "Can numbers repeat? I'll assume yes. The brute force is checking every pair, which is O(n squared). Better: I walk the list once and keep a dictionary from each number to its index. For each number, I check if target minus that number is already in the dictionary. If it is, I return that stored index and the current one. If not, I store the current number. I check before storing so a number can't pair with itself, and that also handles duplicates like 3 and 3 with target 6. That's O(n) time and O(n) space for the dictionary.",
     followUp: { q: "What if the list were already sorted?", a: "Use two pointers from both ends: if the sum is too small move the left one right, if too big move the right one left. O(n) time and O(1) extra space." },
+    qa: [
+      { q: "Can numbers repeat or be negative?", a: "Both. Numbers can repeat and can be negative, but you can't use the same position twice.", keys: ["repeat", "duplicate", "duplicates", "negative", "same", "twice"] },
+      { q: "Is there always exactly one answer?", a: "Yes, assume exactly one valid pair exists.", keys: ["answer", "always", "exactly", "multiple", "solution", "solutions", "pair", "exist"] },
+      { q: "Should I return the values or the positions?", a: "The two positions, as a list. The order doesn't matter.", keys: ["return", "index", "indices", "indexes", "positions", "values"] },
+    ],
   },
   {
     id: "t-sql-joins",
@@ -133,6 +150,11 @@ export const TECH: TechQuestion[] = [
     ],
     say: "An inner join keeps only rows that match in both tables. An outer join also keeps the rows that don't match: a left join keeps every row from the left table, and where there's no match, the right side's columns are NULL. For example, a customer with no orders disappears in an inner join but shows up in a left join with NULLs. So for customers who never ordered: SELECT name FROM Customers, LEFT JOIN Orders ON the order's customerId equals the customer's id, WHERE the order id IS NULL. The NULL means no matching order. NOT EXISTS with a subquery would work too.",
     followUp: { q: "What would a RIGHT JOIN or FULL OUTER JOIN return here?", a: "A right join keeps every order, even ones whose customer doesn't exist. A full outer join keeps everything from both sides, with NULLs wherever there's no match." },
+    qa: [
+      { q: "Can a customer have more than one order?", a: "Yes. A customer can have many orders, or none at all.", keys: ["many", "more", "multiple", "none", "orders", "order"] },
+      { q: "What columns do the tables have?", a: "Customers has an id and a name. Orders has an id and a customer id, which points to a customer.", keys: ["columns", "column", "schema", "tables", "id", "fields"] },
+      { q: "Can two customers have the same name?", a: "They can, so join on the id, not the name.", keys: ["same", "name", "duplicate", "names"] },
+    ],
   },
   {
     id: "t-palindrome",
@@ -152,6 +174,11 @@ export const TECH: TechQuestion[] = [
     ],
     say: "I ignore case and skip anything that isn't a letter or digit. The simple version: build a cleaned, lowercased list of characters and compare it to its reverse. That's O(n) time and O(n) space. To do better on space, I use two pointers, one at each end. I move each pointer inward past anything that isn't alphanumeric, compare the lowercased characters, and return false on the first mismatch. That's still O(n) time but O(1) extra space. An empty string, or one that's only punctuation, counts as a palindrome.",
     followUp: { q: "What if you're allowed to delete at most one character?", a: "Use two pointers; on the first mismatch, try skipping the left character or the right one and check whether either remaining middle section is a palindrome. Still O(n)." },
+    qa: [
+      { q: "What counts as a character?", a: "Only letters and digits. Ignore spaces and punctuation.", keys: ["characters", "character", "count", "punctuation", "spaces", "letters", "digits", "alphanumeric"] },
+      { q: "Does upper or lower case matter?", a: "No, ignore case. Capital A and lowercase a are the same.", keys: ["case", "upper", "lower", "capital", "uppercase", "lowercase"] },
+      { q: "Is an empty string a palindrome?", a: "An empty string, or one with only punctuation, counts as a palindrome.", keys: ["empty", "blank", "nothing"] },
+    ],
   },
   {
     id: "t-frequent-word",
@@ -171,6 +198,11 @@ export const TECH: TechQuestion[] = [
     ],
     say: "First, if two words tie, I'll return the one that appears first. I lowercase the text and turn every non-letter into a space, so punctuation doesn't stick to words. Then I split on whitespace to get the words and count them with a Counter, which is a dictionary from word to count. Finally I take the max by count; Counter's most_common(1) does that too. Everything is one pass over the text, so O(n) time, and O(n) space for the counts in the worst case.",
     followUp: { q: "Now return the top k words instead of just one.", a: "Counter.most_common(k) does it in O(n log k)-ish time; or bucket the words by count for O(n). Mention how you'd break ties." },
+    qa: [
+      { q: "What if two words tie?", a: "Return the one that appears first in the text.", keys: ["tie", "ties", "same", "count", "equal", "both"] },
+      { q: "How do you define a word?", a: "A word is a run of letters. Anything that isn't a letter, like punctuation or digits, separates words. And ignore case.", keys: ["word", "define", "punctuation", "separate", "split", "case"] },
+      { q: "Can the text be empty?", a: "No, it always has at least one letter.", keys: ["empty", "blank"] },
+    ],
   },
   {
     id: "t-group-anagrams",
@@ -190,6 +222,11 @@ export const TECH: TechQuestion[] = [
     ],
     say: "Anagrams have exactly the same letters, just rearranged. So if I sort each word's letters, all anagrams end up with the same sorted string: eat, tea and ate all become a-e-t. I use that as a key in a dictionary, a defaultdict of lists, and append each word to its key's list. At the end I return the dictionary's values. With n words of length up to k, sorting each word is k log k, so O(n times k log k) time and O(n times k) space. A faster key is a tuple of 26 letter counts, which gets it to O(n times k). An empty string is its own group.",
     followUp: { q: "Why can't you use the list of letters itself as the dictionary key?", a: "Lists are mutable, so they aren't hashable. Convert to a string with join, or to a tuple." },
+    qa: [
+      { q: "Are the words all lowercase?", a: "Yes, lowercase letters a to z only.", keys: ["lowercase", "case", "letters", "characters", "uppercase"] },
+      { q: "Does the order of the groups matter?", a: "No. The order of the groups, and of the words inside a group, doesn't matter.", keys: ["order", "sorted", "matter"] },
+      { q: "What about an empty string?", a: "The empty string is a word too. It gets its own group.", keys: ["empty", "blank"] },
+    ],
   },
   {
     id: "t-merge-intervals",
@@ -209,6 +246,11 @@ export const TECH: TechQuestion[] = [
     ],
     say: "I'll ask whether the input is sorted; I'll assume not, and that ranges that touch, like 1-4 and 4-5, should merge. First I sort the ranges by start time. Then I walk through them keeping a result list. If the current range starts at or before the end of the last range in the result, they overlap, so I extend that last range's end to the max of the two ends. Otherwise I append the current range. The max matters when one range sits completely inside another. Sorting is O(n log n), the scan is O(n), so O(n log n) overall, and O(n) space for the output.",
     followUp: { q: "Given two people's schedules, how would you find whether they have any conflict?", a: "Combine both lists, sort by start, and check whether any range starts before the previous one ends. Same sort-then-scan idea." },
+    qa: [
+      { q: "Is the input sorted?", a: "No, it's not sorted. Don't assume any order.", keys: ["sorted", "order", "unsorted"] },
+      { q: "Do ranges that only touch count as overlapping?", a: "Yes. One to four and four to five touch, so they merge into one to five.", keys: ["touch", "touching", "overlap", "overlapping", "endpoint", "share", "edge"] },
+      { q: "Can the list be empty?", a: "It can be. Then return an empty list.", keys: ["empty"] },
+    ],
   },
   {
     id: "t-sql-duplicates",
@@ -227,6 +269,11 @@ export const TECH: TechQuestion[] = [
     ],
     say: "SELECT email FROM Person GROUP BY email HAVING COUNT(*) greater than 1. GROUP BY email puts all the rows with the same email into one group, so each email appears once in the result. Then HAVING keeps only the groups whose count is more than one. I need HAVING, not WHERE, because WHERE filters individual rows before grouping and can't see aggregates like COUNT. HAVING filters the groups after aggregation. A self join of Person to itself on equal email and different id, with DISTINCT, would also work but is clunkier.",
     followUp: { q: "Now delete the duplicates, keeping the row with the smallest id for each email.", a: "DELETE FROM Person WHERE id NOT IN (SELECT MIN(id) FROM Person GROUP BY email). Keeps one row per email, the smallest id." },
+    qa: [
+      { q: "Can the email be NULL?", a: "No, every row has an email.", keys: ["null", "missing"] },
+      { q: "Should I worry about upper and lower case?", a: "No, assume every email is lowercase.", keys: ["case", "upper", "lower", "capital", "uppercase", "lowercase"] },
+      { q: "Should each duplicate email appear once?", a: "Yes, list each duplicated email once, no matter how many times it repeats.", keys: ["once", "twice", "repeat", "each", "output", "appear"] },
+    ],
   },
   {
     id: "t-parentheses",
@@ -246,6 +293,11 @@ export const TECH: TechQuestion[] = [
     ],
     say: "I'll assume the string is only brackets and that empty counts as valid. I use a stack, because the most recently opened bracket has to close first. I keep a small dictionary mapping each closer to its opener. For each character: if it's an opener, I push it. If it's a closer, I check the stack isn't empty and pop the top; if that isn't the matching opener, I return false. At the end, the stack must be empty, otherwise something was never closed. That's O(n) time and O(n) space in the worst case.",
     followUp: { q: "What if there's only one kind of bracket?", a: "You don't need a stack: keep a counter, add one for open and subtract one for close. If it ever goes negative, or isn't zero at the end, it's invalid. O(1) space." },
+    qa: [
+      { q: "What characters can the string have?", a: "Only the six bracket characters: round, square and curly, open and close.", keys: ["characters", "only", "letters", "other", "brackets", "kind", "kinds"] },
+      { q: "Is an empty string valid?", a: "Yes, an empty string counts as valid.", keys: ["empty"] },
+      { q: "How long can the string be?", a: "Up to ten thousand characters, so a linear solution is fine.", keys: ["long", "length", "size", "big"] },
+    ],
   },
 ];
 

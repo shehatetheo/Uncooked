@@ -374,12 +374,18 @@ test("top 10: ghost run needs a perfect rep to score 100, retries are unlimited"
   await page.getByRole("button", { name: "Retry" }).click();
   await input.focus();
   await page.keyboard.type(body);
-  await expect(page.getByText("100 · locked in")).toBeVisible();
+  // perfect, but with the ghost showing it's only practice
+  await expect(page.getByText("100 · practice")).toBeVisible();
+  await expect(page.getByTestId("ghost-practice")).toContainText("ghost was showing");
+  await page.getByRole("button", { name: "Hide ghost" }).click();
+  await input.focus();
+  await page.keyboard.type(body);
+  await expect(page.getByText("100 blind · complete")).toBeVisible();
   await page.getByRole("button", { name: "Next question" }).click();
   await expect(page.getByRole("heading", { name: /Compress a string/ })).toBeVisible();
   await page.waitForTimeout(600);
   await page.goto("/technical");
-  await expect(page.getByText("1/10 at 100%").first()).toBeVisible();
+  await expect(page.getByText("1/10 done blind").first()).toBeVisible();
 });
 
 test("top 10: interview pops up recommendations, grades by points, retry to 100", async ({ page }) => {
@@ -406,7 +412,40 @@ test("top 10: interview pops up recommendations, grades by points, retry to 100"
   );
   await page.getByTestId("submit-answer").click();
   await expect(score).toContainText("100");
-  await expect(page.getByText("100 · nailed it")).toBeVisible();
+  // hints were on, so it's practice: completed needs hints off and no help
+  await expect(page.getByText("100 · practice")).toBeVisible();
+  await expect(page.getByTestId("practice-note")).toContainText("hints were on");
+  await page.getByRole("button", { name: "Retry" }).click();
+  await page.getByRole("button", { name: "Hints on" }).click();
+  await page.getByTestId("ask").click();
+  await page.getByLabel("Your answer").fill(
+    "Can numbers repeat? I'll assume yes. Brute force checks every pair, O(n squared). Instead I keep a dictionary from number to index and check if target minus the number is already there, checking before storing so a number can't pair with itself, which handles duplicates like 3 and 3. O(n) time and O(n) space.",
+  );
+  await page.getByTestId("submit-answer").click();
+  await expect(page.getByText("100 · clean, complete")).toBeVisible();
+  await page.waitForTimeout(600);
+  await page.goto("/technical");
+  await expect(page.getByText("1/10 clean at 100").first()).toBeVisible();
+});
+
+test("top 10: ask the interviewer a question, typed or from a suggestion", async ({ page }) => {
+  await skipIntro(page);
+  await page.goto("/technical");
+  await page.locator("li", { hasText: "Merge" }).getByRole("button", { name: "Interview" }).click();
+  await page.getByRole("button", { name: "Voice on" }).click();
+  await page.getByTestId("ask").click();
+  const box = page.getByLabel("Your answer");
+  await expect(box).toBeVisible();
+  await box.fill("Is the input already sorted?");
+  await page.getByRole("button", { name: "Send reply" }).click();
+  const lines = page.getByTestId("interviewer-line");
+  await expect(lines.last()).toContainText("not sorted");
+  // a suggested question gets answered too, but makes it a practice run
+  await page.getByTestId("ask-chips").getByRole("button", { name: /only touch/ }).click();
+  await expect(lines.last()).toContainText("merge into one to five");
+  await expect(page.getByTestId("ask-chips")).not.toContainText("only touch");
+  await page.getByTestId("submit-answer").click();
+  await expect(page.getByTestId("practice-note")).toContainText("suggested question");
 });
 
 test("top 10: uses Claude's grade when the grader answers", async ({ page }) => {
@@ -501,4 +540,116 @@ test("top 10 simulator: the interviewer reacts to what you say, then follows up 
   await expect(lines.last()).toContainText("Let's see how you did");
   await expect(page.getByTestId("tech-score")).toContainText("100", { timeout: 10000 });
   await expect(page.getByTestId("tech-result")).toContainText("The conversation");
+});
+
+test("the gauntlet: practice on a clock, questions, rounds, a report with a feedback rubric", async ({ page }) => {
+  await skipIntro(page);
+  await page.goto("/gauntlet");
+  await expect(page.getByRole("heading", { name: "The Gauntlet" })).toBeVisible();
+  await page.getByTestId("practice-run").click();
+  await expect(page.getByTestId("call-bar")).toContainText("Practice call");
+  await page.getByRole("button", { name: "Voice on" }).click();
+  await page.getByRole("button", { name: "Join the call" }).click();
+  await expect(page.getByTestId("conversation")).toContainText("This is the gauntlet");
+  await expect(page.getByTestId("clock")).toContainText(/[34]:\d\d/);
+  const box = page.getByLabel("Your answer");
+  await expect(box).toBeVisible();
+  await box.fill("Can the numbers be negative?");
+  await page.getByRole("button", { name: "Send reply" }).click();
+  await expect(page.getByTestId("interviewer-line").last()).toContainText("can be negative");
+  for (let i = 0; i < 5; i++) {
+    await page.getByTestId("submit-answer").click({ timeout: 15000 });
+    await expect(page.getByTestId("tech-result")).toBeVisible();
+    if (i === 0) await expect(page.getByTestId("time-used")).toContainText("of 4:00");
+    await page.getByTestId("next-round").click();
+    if (i < 4) {
+      await page.getByRole("button", { name: `Start round ${i + 2}` }).click();
+      await expect(page.getByTestId("conversation")).toContainText("clock starts now");
+    }
+  }
+  await expect(page.getByTestId("gauntlet-report")).toBeVisible();
+  await expect(page.getByTestId("feedback-rubric")).toContainText("Time management");
+  await expect(page.getByTestId("gauntlet-score")).toBeVisible();
+  await page.getByRole("button", { name: "Lobby" }).click();
+  await expect(page.getByTestId("gauntlet-history")).toContainText("practice");
+});
+
+test("the gauntlet: the real thing calls time at zero", async ({ page }) => {
+  await skipIntro(page);
+  await page.clock.install();
+  await page.goto("/gauntlet");
+  await page.getByTestId("real-run").click();
+  await expect(page.getByTestId("call-bar")).toContainText("Live call");
+  await page.getByRole("button", { name: "Voice on" }).click();
+  await page.getByRole("button", { name: "Join the call" }).click();
+  await expect(page.getByLabel("Your answer")).toBeVisible();
+  await expect(page.getByTestId("ask-chips")).toHaveCount(0);
+  await page.getByLabel("Your answer").fill("I'd use a dictionary from number to index");
+  await page.clock.runFor(4 * 60_000 + 2000);
+  await expect(page.getByTestId("tech-result")).toBeVisible({ timeout: 10000 });
+  await expect(page.getByTestId("time-used")).toContainText("of 4:00");
+  await expect(page.getByTestId("conversation")).toHaveCount(0); // compact: just the score card
+  await expect(page.getByTestId("next-round")).toContainText("Round 2");
+});
+
+test("the gauntlet: Claude plays the interviewer, thinks, then replies", async ({ page }) => {
+  await skipIntro(page);
+  await page.addInitScript(() => localStorage.setItem("uncooked:interview-passcode", "test-pass"));
+  let calls = 0;
+  await page.route("**/api/gauntlet", async (route) => {
+    calls++;
+    const body = route.request().postDataJSON() as { turns: { who: string; text: string }[] };
+    await new Promise((r) => setTimeout(r, 300));
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ say: `Interesting, you said "${body.turns.at(-1)!.text}". Why a dictionary?`, wrap: false }) });
+  });
+  await page.goto("/gauntlet");
+  await expect(page.getByText("Claude is on the call")).toBeVisible();
+  await page.getByTestId("dry-run").click();
+  await page.getByRole("button", { name: "Voice on" }).click();
+  await page.getByRole("button", { name: "Join the call" }).click();
+  await expect(page.getByText("On call · Claude interviewer")).toBeVisible();
+  await page.getByLabel("Your answer").fill("I'd use a dictionary");
+  await page.getByRole("button", { name: "Send reply" }).click();
+  await expect(page.getByTestId("thinking")).toBeVisible();
+  await expect(page.getByTestId("interviewer-line").last()).toContainText("Why a dictionary?");
+  expect(calls).toBe(1);
+});
+
+test("the gauntlet: if Claude can't answer, the built-in interviewer takes over mid-call", async ({ page }) => {
+  await skipIntro(page);
+  await page.addInitScript(() => localStorage.setItem("uncooked:interview-passcode", "test-pass"));
+  await page.route("**/api/gauntlet", (route) => route.fulfill({ status: 402, contentType: "application/json", body: JSON.stringify({ error: "no_credits", message: "the Anthropic account has no API credits" }) }));
+  await page.goto("/gauntlet");
+  await page.getByTestId("dry-run").click();
+  await page.getByRole("button", { name: "Voice on" }).click();
+  await page.getByRole("button", { name: "Join the call" }).click();
+  await page.getByLabel("Your answer").fill("Can the numbers be negative?");
+  await page.getByRole("button", { name: "Send reply" }).click();
+  await expect(page.getByTestId("ai-down")).toContainText("no API credits");
+  await expect(page.getByTestId("interviewer-line").last()).toContainText("can be negative");
+});
+
+test("the gauntlet: code while you talk, run it, solution unlocks after the round", async ({ page }) => {
+  await skipIntro(page);
+  await page.goto("/gauntlet");
+  await page.getByTestId("practice-run").click();
+  const ws = page.getByTestId("call-workspace");
+  await expect(ws).toContainText("target");
+  await ws.getByTestId("tab-solution").click();
+  await expect(ws.getByTestId("solution-pane")).toContainText("Unlocks when this round is over");
+  await ws.getByTestId("tab-hints").click();
+  await expect(ws.getByTestId("hints-pane")).toContainText("How you get full marks");
+  const editor = ws.locator(".cm-content");
+  await editor.click();
+  await page.keyboard.press("ControlOrMeta+a");
+  // CodeMirror auto-indents after each colon
+  await page.keyboard.type("class Solution:\ndef twoSum(self, nums, target):\nreturn [[i, j] for i in range(len(nums)) for j in range(i + 1, len(nums)) if nums[i] + nums[j] == target][0]");
+  await ws.getByTestId("run-code").click();
+  await expect(ws.getByTestId("console")).toContainText(/example tests pass|passed|✓/, { timeout: 60000 });
+  await page.getByRole("button", { name: "Voice on" }).click();
+  await page.getByRole("button", { name: "Join the call" }).click();
+  await page.getByTestId("submit-answer").click();
+  await expect(page.getByTestId("tech-result")).toBeVisible();
+  await ws.getByTestId("tab-solution").click();
+  await expect(ws.getByTestId("solution-pane")).toContainText("How to say it");
 });

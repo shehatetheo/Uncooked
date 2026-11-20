@@ -335,3 +335,8 @@
   }
   .ghost-cursor { animation: none; }
 }
+
+/* the live-call dot */
+@keyframes call-pulse { 50% { opacity: 0.25; } }
+.pulse { animation: call-pulse 1.2s steps(2, jump-none) infinite; }
+@media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }

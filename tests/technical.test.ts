@@ -72,3 +72,45 @@ describe("interview simulator", () => {
     for (const t of TECH) for (const p of t.rubric) expect(["clarify", "brute", "core", "why", "alt", "example", "complexity", "edge"]).toContain(probeOf(p));
   });
 });
+
+import { clipMenu, GAUNTLET, isQuestion, matchQuestion, verdict } from "@/lib/simulator";
+import { techById } from "@content/technical";
+import { existsSync } from "node:fs";
+
+describe("asking the interviewer", () => {
+  it("tells questions from answers", () => {
+    expect(isQuestion("Can the numbers be negative?")).toBe(true);
+    expect(isQuestion("is the input sorted")).toBe(true);
+    expect(isQuestion("Can numbers repeat? I'll assume yes, so duplicates work.")).toBe(false);
+    expect(isQuestion("I'd use a dictionary.")).toBe(false);
+    expect(isQuestion("What I'd do is sort first, then walk the list and merge any overlapping ranges by extending the end of the last one, which is O(n log n) overall because of the sort.")).toBe(false);
+  });
+  it("matches a spoken question to the prepared answer", () => {
+    const two = techById.get("t-two-sum")!;
+    expect(matchQuestion(two, "can there be duplicates or negative numbers?")).toBe(0);
+    expect(matchQuestion(two, "do I return the indices?")).toBe(2);
+    expect(matchQuestion(two, "what's your favorite color?")).toBe(-1);
+    const merge = techById.get("t-merge-intervals")!;
+    expect(matchQuestion(merge, "Is the input already sorted?")).toBe(0);
+    expect(matchQuestion(merge, "do touching intervals overlap?")).toBe(1);
+  });
+  it("has a recorded clip for every answer and every line Claude can pick", () => {
+    for (const q of TECH) {
+      expect(q.qa.length).toBeGreaterThanOrEqual(3);
+      for (const key of Object.keys(clipMenu(q))) expect(existsSync(`public/voice/${key}.mp3`), key).toBe(true);
+    }
+    for (const k of ["gauntlet-intro", "gauntlet-next", "gauntlet-end", "time-1min", "time-up"]) expect(existsSync(`public/voice/${k}.mp3`), k).toBe(true);
+  });
+});
+
+describe("the gauntlet", () => {
+  it("is five real questions with different clocks", () => {
+    expect(GAUNTLET).toHaveLength(5);
+    for (const r of GAUNTLET) expect(techById.has(r.id)).toBe(true);
+    expect(new Set(GAUNTLET.map((r) => r.seconds)).size).toBe(5);
+  });
+  it("gives a verdict on the app's scale", () => {
+    expect(verdict(95).title).toBe("Uncooked");
+    expect(verdict(10).title).toBe("Burnt");
+  });
+});

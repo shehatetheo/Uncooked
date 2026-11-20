@@ -16,9 +16,10 @@ export const ghostScore = (r: RepResult) => (r.errors === 0 ? 100 : Math.min(99,
 export function TechGhost({ q, onNext, nextLabel }: { q: TechQuestion; onNext?: () => void; nextLabel?: string }) {
   const { tech } = useStore();
   const best = tech[q.id]?.ghostBest ?? 0;
+  const blindBest = tech[q.id]?.blindBest ?? 0;
   const [repKey, setRepKey] = useState(0);
   const [blind, setBlind] = useState(false);
-  const [last, setLast] = useState<{ r: RepResult; score: number } | null>(null);
+  const [last, setLast] = useState<{ r: RepResult; score: number; clean: boolean } | null>(null);
   const [line, setLine] = useState(0);
   const target = useMemo(() => ghostTarget(q), [q]);
   const captions = q.kind === "code" ? problemById.get(q.ref)?.captions ?? [] : [];
@@ -26,12 +27,14 @@ export function TechGhost({ q, onNext, nextLabel }: { q: TechQuestion; onNext?: 
   const onDone = useCallback(
     (r: RepResult) => {
       const score = ghostScore(r);
-      actions.techGhost(q.id, score);
-      setLast({ r, score });
+      // only a blind run with no peeks counts toward completing it
+      const clean = blind && r.peeks === 0;
+      actions.techGhost(q.id, score, clean);
+      setLast({ r, score, clean });
       if (score === 100) blip.pass();
       else blip.fail();
     },
-    [q.id],
+    [q.id, blind],
   );
   const retry = () => {
     setLast(null);
@@ -53,7 +56,7 @@ export function TechGhost({ q, onNext, nextLabel }: { q: TechQuestion; onNext?: 
           onDone={onDone}
           autoplay={false}
           onAutoplayEnd={() => {}}
-          header={<span className="font-pixel text-xs">BEST <span className={best === 100 ? "text-accent" : "text-text"}>{best}%</span> · goal <span className="text-accent">100</span></span>}
+          header={<span className="font-pixel text-xs">BLIND <span className={blindBest === 100 ? "text-accent" : "text-text"}>{blindBest}%</span> · practice {best}% · goal <span className="text-accent">100 blind</span></span>}
           pills={<button type="button" className="btn btn-sm" aria-pressed={blind} onClick={() => { setBlind(!blind); retry(); }}>{blind ? "Ghost hidden" : "Hide ghost"}</button>}
         />
         {cap && (
@@ -66,7 +69,7 @@ export function TechGhost({ q, onNext, nextLabel }: { q: TechQuestion; onNext?: 
       </Panel>
 
       {last && (
-        <Panel accent={last.score === 100} title={last.score === 100 ? "100 · locked in" : `Score ${last.score} · go again`} className="fade-in">
+        <Panel accent={last.score === 100 && last.clean} title={last.score === 100 && last.clean ? "100 blind · complete" : last.score === 100 ? "100 · practice" : `Score ${last.score} · go again`} className="fade-in">
           <div className="p-4" data-testid="ghost-result">
             <p className="font-pixel text-lg tabular-nums">
               <span className={last.score === 100 ? "text-accent" : "text-second"}>{last.score}</span><span className="text-dim">/100</span>
@@ -74,7 +77,10 @@ export function TechGhost({ q, onNext, nextLabel }: { q: TechQuestion; onNext?: 
               <span className="text-dim"> · </span><span className={last.r.errors ? "text-error" : ""}>{last.r.errors}</span> <span className="text-dim">ERR</span>
               <span className="text-dim"> · </span><span className="text-second">{fmtTime(last.r.ms)}</span>
             </p>
-            <p className="mt-2 text-sm text-dim">{last.score === 100 ? (blind ? "Perfect, from memory." : "Perfect run. Try it with the ghost hidden, or move on.") : "Any error keeps you under 100. Slow down on the lines that tripped you."}</p>
+            <p className="mt-2 text-sm text-dim">
+              {last.score === 100 && last.clean ? "Perfect, from memory. This one's complete." : last.score === 100 ? "Perfect run, but it's practice. Hide the ghost and type it with no peeks to complete it." : "Any error keeps you under 100. Slow down on the lines that tripped you."}
+            </p>
+            {!last.clean && <p className="mt-1 text-xs text-second" data-testid="ghost-practice">Practice run: {blind ? "you peeked, so it doesn't count" : "the ghost was showing, so it doesn't count"}. Completed means blind, no help.</p>}
             <div className="mt-4 flex flex-wrap gap-1">
               <button type="button" className={cx("btn", last.score < 100 && "btn-primary")} onClick={retry} autoFocus={last.score < 100}>Retry</button>
               {onNext && <button type="button" className={cx("btn", last.score === 100 && "btn-primary")} onClick={onNext} autoFocus={last.score === 100}>{nextLabel ?? "Next"}</button>}

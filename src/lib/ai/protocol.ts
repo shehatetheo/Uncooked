@@ -68,7 +68,7 @@ export interface Scorecard {
 
 /** An error the app can show as-is. */
 export interface ApiError {
-  error: "rate_limited" | "no_credits" | "auth" | "unavailable" | "bad_request";
+  error: "rate_limited" | "no_credits" | "needs_card" | "auth" | "unavailable" | "bad_request";
   message: string;
 }
 

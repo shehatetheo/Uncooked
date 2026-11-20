@@ -19,6 +19,9 @@ export function explain(e: unknown): { status: number; body: ApiError } {
   const status = e instanceof GatewayError ? e.statusCode : e instanceof APICallError ? e.statusCode ?? 502 : typeof carried === "number" ? carried : 502;
   const text = e instanceof Error ? e.message : String(e);
   if (e instanceof GatewayRateLimitError || status === 429 || /rate.?limit|too many requests/i.test(text)) return { status: 429, body: { error: "rate_limited", message: "The AI interviewer is rate limited on the free tier right now. Wait a minute and try again. Your code and tests still work." } };
+  // the gateway won't serve even free models until the Vercel team has a card on file
+  if (/credit card on file|customer_verification_required/i.test(text))
+    return { status: 402, body: { error: "needs_card", message: "Vercel AI Gateway needs a credit card on file before it will answer, even for free models. Add one in the Vercel dashboard under AI Gateway, then try again. The coding, tests and ghost guide work without it." } };
   if (status === 402 || /credit|quota|billing|payment/i.test(text)) return { status: 402, body: { error: "no_credits", message: "The AI Gateway free credits have run out for now. The coding, tests and ghost guide still work without the interviewer." } };
   if (e instanceof GatewayAuthenticationError || status === 401 || status === 403 || /oidc|api key|unauthenticated/i.test(text))
     return { status: 502, body: { error: "auth", message: "The AI interviewer couldn't sign in to Vercel AI Gateway. On Vercel, check that no AI_GATEWAY_API_KEY variable is set. Locally, run vercel env pull. The coding part still works." } };
@@ -26,7 +29,7 @@ export function explain(e: unknown): { status: number; body: ApiError } {
 }
 
 /** Rate limiting and model errors mean "try the next model"; auth and credit errors won't be fixed by another model. */
-export const worthRetrying = (e: unknown) => !["auth", "no_credits"].includes(explain(e).body.error);
+export const worthRetrying = (e: unknown) => !["auth", "no_credits", "needs_card"].includes(explain(e).body.error);
 
 // A small per-instance limiter so a stray tab can't burn the free tier.
 const hits = new Map<string, number[]>();

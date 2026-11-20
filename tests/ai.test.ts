@@ -54,6 +54,7 @@ describe("request cleaning and errors", () => {
     expect(explain(Object.assign(new Error("Too many requests"), { statusCode: 429 })).body.error).toBe("rate_limited");
     expect(explain(new Error("Rate limit exceeded for free tier")).body.error).toBe("rate_limited");
     expect(explain(new Error("Insufficient credit balance")).body.error).toBe("no_credits");
+    expect(explain(Object.assign(new Error("AI Gateway requires a valid credit card on file to service requests."), { statusCode: 403 })).body.error).toBe("needs_card");
     expect(explain(new Error("OIDC token missing")).body.error).toBe("auth");
     expect(explain(new Error("boom")).body.message).toContain("still work");
   });

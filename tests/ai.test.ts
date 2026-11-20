@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { problemById, problems } from "@content/index";
 import { FALLBACK_MODELS, INTERVIEWER_MODEL } from "@/lib/ai/config";
 import { contextBlock, describeRun, scorecardPrompt, systemPrompt } from "@/lib/ai/prompt";
-import { cleanMessages, cleanRun, explain } from "@/lib/ai/server";
+import { cleanMessages, cleanRun, explain, worthRetrying } from "@/lib/ai/server";
 import { ghostLines, referenceCode, show, showArgs, starterCode } from "@/lib/code";
 import { plainSpeech, voiceScore } from "@/lib/speech";
 import type { PythonProblem } from "@/lib/types";
@@ -57,6 +57,12 @@ describe("request cleaning and errors", () => {
     expect(explain(Object.assign(new Error("AI Gateway requires a valid credit card on file to service requests."), { statusCode: 403 })).body.error).toBe("needs_card");
     expect(explain(new Error("OIDC token missing")).body.error).toBe("auth");
     expect(explain(new Error("boom")).body.message).toContain("still work");
+    // the gateway's real wording mentions "paid credits", but it is about the model, and the next model should be tried
+    const restricted = Object.assign(new Error("Free tier users do not have access to this model. See the models available on the free tier or upgrade to paid credits."), { statusCode: 403 });
+    expect(explain(restricted).body.error).toBe("model_restricted");
+    expect(worthRetrying(restricted)).toBe(true);
+    expect(worthRetrying(new Error("Insufficient credit balance"))).toBe(true);
+    expect(worthRetrying(new Error("AI Gateway requires a valid credit card on file"))).toBe(false);
   });
   it("has one model constant and free fallbacks", () => {
     expect(INTERVIEWER_MODEL).toMatch(/^[a-z0-9-]+\/[a-z0-9.-]+$/);

@@ -4,11 +4,14 @@ import { FALLBACK_MODELS, INTERVIEWER_MODEL } from "./config";
 import type { ApiError, ChatMessage, RunSummary } from "./protocol";
 import { MAX_MESSAGE_CHARS, MAX_MESSAGES } from "./protocol";
 
-/** The model that answered last time goes first, so a dead model isn't retried on every turn. */
+/** The model that answered last time goes first, so a failing model isn't retried on every turn. */
 let preferred = INTERVIEWER_MODEL;
-export const modelsToTry = () => [...new Set([preferred, INTERVIEWER_MODEL, ...FALLBACK_MODELS])];
+let preferredAt = 0;
+/** A fallback is only preferred for a few minutes, then the main model gets another chance. */
+export const modelsToTry = () => [...new Set([Date.now() - preferredAt < 5 * 60_000 ? preferred : INTERVIEWER_MODEL, INTERVIEWER_MODEL, ...FALLBACK_MODELS])];
 export const markWorking = (model: string) => {
   preferred = model;
+  preferredAt = Date.now();
 };
 
 export const fail = (status: number, error: ApiError["error"], message: string) => Response.json({ error, message } satisfies ApiError, { status });
@@ -22,14 +25,21 @@ export function explain(e: unknown): { status: number; body: ApiError } {
   // the gateway won't serve even free models until the Vercel team has a card on file
   if (/credit card on file|customer_verification_required/i.test(text))
     return { status: 402, body: { error: "needs_card", message: "Vercel AI Gateway needs a credit card on file before it will answer, even for free models. Add one in the Vercel dashboard under AI Gateway, then try again. The coding, tests and ghost guide work without it." } };
+  // this model isn't on the free tier: another one may be
+  if (/do not have access to this model|RestrictedModels|no_providers_available/i.test(text))
+    return { status: 502, body: { error: "model_restricted", message: "The interviewer's model isn't available on the AI Gateway free tier. Pick another one in src/lib/ai/config.ts. The coding, tests and ghost guide still work." } };
   if (status === 402 || /credit|quota|billing|payment/i.test(text)) return { status: 402, body: { error: "no_credits", message: "The AI Gateway free credits have run out for now. The coding, tests and ghost guide still work without the interviewer." } };
   if (e instanceof GatewayAuthenticationError || status === 401 || status === 403 || /oidc|api key|unauthenticated/i.test(text))
     return { status: 502, body: { error: "auth", message: "The AI interviewer couldn't sign in to Vercel AI Gateway. On Vercel, check that no AI_GATEWAY_API_KEY variable is set. Locally, run vercel env pull. The coding part still works." } };
   return { status: 502, body: { error: "unavailable", message: "The AI interviewer isn't reachable right now. The coding, tests and ghost guide still work. Try again in a moment." } };
 }
 
-/** Rate limiting and model errors mean "try the next model"; auth and credit errors won't be fixed by another model. */
-export const worthRetrying = (e: unknown) => !["auth", "no_credits", "needs_card"].includes(explain(e).body.error);
+/**
+ * Most failures mean "try the next model": rate limits, a model that isn't on
+ * the free tier, even running out of credit (the fallbacks cost nothing).
+ * Only sign-in problems are the same for every model.
+ */
+export const worthRetrying = (e: unknown) => !["auth", "needs_card"].includes(explain(e).body.error);
 
 // A small per-instance limiter so a stray tab can't burn the free tier.
 const hits = new Map<string, number[]>();
